@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHIPIT.CLUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;900&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  /* tokens — design-isms: dev-guides.json["neo-brutalism"] */
+  :root {
+    --orange: #FF5733;
+    --yellow: #FFC300;
+    --ink: #000000;
+    --white: #FFFFFF;
+    --paper: #FFF6E6;
+    --pink: #FF9FD6;
+
+    --bw: 3px;                 /* border token */
+    --sh: 6px;                 /* hard-shadow offset token */
+    --u: 8px;                  /* spacing unit */
+    --gutter: 16px;
+    --margin: 24px;
+    --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+    --dur: 200ms;
+
+    --head: "Space Grotesk", "Gothic A1", system-ui, sans-serif;
+    --body: "Gothic A1", system-ui, sans-serif;
+    --mono: "Space Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--paper); color: var(--ink); font: 500 18px/1.45 var(--body); }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: var(--bw) dashed var(--ink); outline-offset: 4px; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 0 var(--margin); }
+
+  /* the one material: thick border + hard shadow; hover flips the shadow, press flattens it */
+  .blk { border: var(--bw) solid var(--ink); box-shadow: var(--sh) var(--sh) 0 var(--ink); background: var(--white); }
+  .hit { cursor: pointer; transition: box-shadow var(--dur) var(--ease), transform var(--dur) var(--ease), background-color var(--dur) var(--ease); }
+  .hit:hover { box-shadow: calc(var(--sh) * -1) var(--sh) 0 var(--ink); }
+  .hit:active { transform: translate(var(--sh), var(--sh)); box-shadow: 0 0 0 var(--ink); transition-duration: 60ms; }
+
+  .label { font: 700 13px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; }
+  .tag { display: inline-block; padding: 6px 10px; border: var(--bw) solid var(--ink); background: var(--yellow); }
+
+  h1, h2, h3 { font-family: var(--head); font-weight: 700; letter-spacing: -0.05em; line-height: 1.02; }
+  h1, h2 { font-weight: 900; font-synthesis: none; } /* Gothic A1 900 for Hangul, Space Grotesk tops out at 700 */
+  h1 { font-size: clamp(48px, 7.4vw, 104px); }
+  h2 { font-size: clamp(34px, 4.6vw, 64px); }
+  .plate { background: var(--yellow); padding: 0 .12em; border: var(--bw) solid var(--ink); display: inline-block; transform: rotate(-1.5deg); }
+  .plate.o { background: var(--orange); transform: rotate(1deg); }
+
+  /* nav */
+  nav { border-bottom: var(--bw) solid var(--ink); background: var(--white); position: sticky; top: 0; z-index: 10; }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; gap: var(--gutter); height: 72px; }
+  .logo { font: 700 20px/1 var(--mono); background: var(--ink); color: var(--white); padding: 10px 12px; }
+  .logo b { color: var(--yellow); }
+  .links { display: flex; gap: 28px; font-weight: 700; }
+  .links a { color: var(--ink); text-decoration: none; }
+  .links a:hover { text-decoration: underline; text-decoration-thickness: var(--bw); text-underline-offset: 6px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; font-weight: 900; text-decoration: none; color: var(--ink); background: var(--yellow); }
+  .btn.o { background: var(--orange); }
+
+  /* hero */
+  .hero { padding: calc(var(--u) * 10) 0 calc(var(--u) * 12); border-bottom: var(--bw) solid var(--ink); }
+  .hero .wrap { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gutter); align-items: start; }
+  .hero-copy { grid-column: 1 / span 7; }
+  .hero-copy .tag { margin-bottom: 24px; }
+  .hero-copy p { margin-top: 28px; max-width: 34ch; font-size: 20px; }
+  .proof { display: flex; gap: 12px; margin-top: 32px; flex-wrap: wrap; }
+  .proof span { padding: 8px 12px; border: var(--bw) solid var(--ink); background: var(--white); font-weight: 700; font-size: 15px; }
+
+  .signup { grid-column: 9 / span 4; position: relative; padding: 28px; background: var(--pink); }
+  .sticker { position: absolute; top: -22px; right: -14px; background: var(--orange); border: var(--bw) solid var(--ink); padding: 8px 12px; transform: rotate(6deg); }
+  .signup h3 { font-size: 30px; margin-bottom: 18px; }
+  .field { display: grid; gap: 8px; margin-bottom: 18px; }
+  .input { width: 100%; padding: 14px; border: var(--bw) solid var(--ink); background: var(--white); outline: none; font-weight: 700; }
+  .input:focus { background: var(--yellow); }
+  .input[aria-invalid="true"] { background: #FFE1DA; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; }
+  .chips legend { margin-bottom: 8px; }
+  .chip input { position: absolute; opacity: 0; }
+  .chip span { display: block; padding: 8px 14px; border: var(--bw) solid var(--ink); background: var(--white); font-weight: 700; box-shadow: 3px 3px 0 var(--ink); cursor: pointer; transition: background-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .chip input:checked + span { background: var(--ink); color: var(--yellow); box-shadow: 0 0 0 var(--ink); }
+  .chip input:focus-visible + span { outline: var(--bw) dashed var(--ink); outline-offset: 3px; }
+  .err { min-height: 20px; font-weight: 900; font-size: 14px; color: #B3200A; }
+  .signup .btn { width: 100%; justify-content: center; font-size: 20px; padding: 16px; }
+  .done { text-align: left; }
+  .done .num { font: 700 64px/1 var(--mono); letter-spacing: -0.04em; margin: 12px 0; }
+
+  /* bento stats */
+  section { padding: calc(var(--u) * 12) 0; border-bottom: var(--bw) solid var(--ink); }
+  .sec-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; margin-bottom: 48px; }
+  .sec-head p { max-width: 36ch; }
+  .bento { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gutter); }
+  .stat { padding: 24px; display: flex; flex-direction: column; justify-content: space-between; min-height: 200px; gap: 24px; }
+  .stat .big { font: 700 clamp(56px, 7vw, 96px)/.9 var(--head); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+  .s1 { grid-column: span 5; grid-row: span 2; background: var(--orange); }
+  .s1 .big { font-size: clamp(96px, 13vw, 180px); }
+  .s2 { grid-column: span 4; background: var(--yellow); }
+  .s3 { grid-column: span 3; background: var(--ink); color: var(--white); }
+  .s3 .label { color: var(--yellow); }
+  .s4 { grid-column: span 7; background: var(--white); flex-direction: row; align-items: center; }
+  .bars { display: flex; align-items: end; gap: 6px; height: 90px; flex: 1; }
+  .bars i { flex: 1; background: var(--ink); height: var(--h); border: 0; }
+  .bars i:last-child { background: var(--orange); outline: var(--bw) solid var(--ink); }
+
+  /* weekly checklist */
+  .board { display: grid; grid-template-columns: 7fr 5fr; gap: calc(var(--gutter) * 2); }
+  .tasks { padding: 8px 0; }
+  .task { display: flex; gap: 16px; align-items: center; padding: 18px 24px; border-bottom: var(--bw) solid var(--ink); cursor: pointer; font-weight: 700; font-size: 20px; }
+  .task:last-child { border-bottom: 0; }
+  .task input { appearance: none; width: 32px; height: 32px; flex: none; border: var(--bw) solid var(--ink); background: var(--white); display: grid; place-items: center; cursor: pointer; }
+  .task input:checked { background: var(--yellow); }
+  .task input:checked::after { content: ""; width: 14px; height: 8px; border: solid var(--ink); border-width: 0 0 4px 4px; transform: translateY(-2px) rotate(-45deg); }
+  .task:has(input:checked) .t { text-decoration: line-through; text-decoration-thickness: 3px; }
+  .task .d { margin-left: auto; }
+  .meter { padding: 24px; display: grid; gap: 20px; align-content: start; background: var(--white); transition: background-color 0s; }
+  .meter.full { background: var(--orange); }
+  .meter .pct { font: 700 120px/.85 var(--head); letter-spacing: -0.06em; font-variant-numeric: tabular-nums; }
+  .track { height: 40px; border: var(--bw) solid var(--ink); background: var(--white); }
+  .fill { height: 100%; width: 100%; transform-origin: left; transform: scaleX(var(--p, 0)); border-right: var(--bw) solid var(--ink);
+    background: repeating-linear-gradient(-45deg, var(--ink) 0 8px, var(--yellow) 8px 16px); transition: transform 320ms steps(4, end); }
+
+  /* quiz */
+  .quiz { padding: 32px; background: var(--yellow); }
+  .q-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  .dots { display: flex; gap: 6px; }
+  .dots i { width: 28px; height: 10px; border: var(--bw) solid var(--ink); background: var(--white); }
+  .dots i.on { background: var(--ink); }
+  .q-text { font: 900 clamp(26px, 3.4vw, 40px)/1.15 var(--body); letter-spacing: -0.04em; margin-bottom: 28px; }
+  .opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+  .opt { text-align: left; padding: 20px; font-weight: 700; font-size: 18px; background: var(--white); }
+  .opt b { display: block; font: 700 13px/1 var(--mono); margin-bottom: 10px; }
+  .result { display: grid; grid-template-columns: auto 1fr; gap: 28px; align-items: center; }
+  .result .face { width: 140px; aspect-ratio: 1; display: grid; place-items: center; font: 700 64px/1 var(--mono); background: var(--orange); }
+  .result h3 { font-size: clamp(32px, 4vw, 52px); margin: 8px 0 12px; }
+  .result .btn { margin-top: 20px; background: var(--white); }
+
+  /* plans */
+  .toggle { display: inline-flex; border: var(--bw) solid var(--ink); background: var(--white); }
+  .toggle button { padding: 10px 18px; border: 0; background: none; font-weight: 900; cursor: pointer; }
+  .toggle button[aria-pressed="true"] { background: var(--ink); color: var(--yellow); }
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: calc(var(--gutter) * 2); align-items: stretch; }
+  .plan { text-align: left; padding: 28px; display: flex; flex-direction: column; gap: 16px; background: var(--white); }
+  .plan[aria-pressed="true"] { background: var(--yellow); box-shadow: var(--sh) var(--sh) 0 var(--orange), calc(var(--sh) + 3px) calc(var(--sh) + 3px) 0 var(--ink); }
+  .plan .price { font: 700 56px/1 var(--head); letter-spacing: -0.06em; }
+  .plan .price small { font: 700 16px var(--body); letter-spacing: 0; }
+  .plan ul { list-style: none; padding: 0; display: grid; gap: 8px; }
+  .plan li::before { content: "■ "; }
+  .plan .pick { margin-top: auto; font: 700 14px/1 var(--mono); }
+  .plan .badge { align-self: flex-start; background: var(--orange); border: var(--bw) solid var(--ink); padding: 4px 8px; }
+
+  /* faq */
+  details { border: var(--bw) solid var(--ink); background: var(--white); margin-bottom: 12px; box-shadow: 4px 4px 0 var(--ink); }
+  summary { list-style: none; cursor: pointer; padding: 20px 24px; font-weight: 900; font-size: 20px; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font: 700 28px/1 var(--mono); }
+  details[open] summary { background: var(--ink); color: var(--white); }
+  details[open] summary::after { content: "−"; color: var(--yellow); }
+  details p { padding: 20px 24px; border-top: var(--bw) solid var(--ink); }
+
+  footer { background: var(--ink); color: var(--white); padding: 64px 0 32px; overflow: hidden; }
+  .huge { font: 700 clamp(80px, 19vw, 300px)/.8 var(--head); letter-spacing: -0.07em; color: var(--yellow); }
+  .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 32px; font: 700 14px var(--mono); }
+
+  @media (max-width: 900px) {
+    :root { --sh: 4px; --bw: 2.5px; --margin: 16px; }
+    .links { display: none; }
+    .hero-copy, .signup { grid-column: 1 / -1; }
+    .signup { margin-top: 40px; }
+    .s1, .s2, .s3, .s4 { grid-column: 1 / -1; grid-row: auto; }
+    .board, .opts, .plans { grid-template-columns: 1fr; }
+    .result { grid-template-columns: 1fr; }
+    .meter .pct { font-size: 88px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 1ms !important; }
+  }
+</style>
+</head>
+<body>
+<nav aria-label="주 메뉴">
+  <div class="wrap">
+    <span class="logo">SHIPIT<b>.</b>CLUB</span>
+    <div class="links"><a href="#stats">기록</a><a href="#board">이번 주</a><a href="#quiz">유형 테스트</a><a href="#plans">요금</a></div>
+    <a class="btn blk hit" href="#join">가입하기 →</a>
+  </div>
+</nav>
+
+<main>
+  <header class="hero" id="join">
+    <div class="wrap">
+      <div class="hero-copy">
+        <span class="tag label">Season 07 · 가상 서비스 데모</span>
+        <h1>이번 주에도<br><span class="plate">뭐라도</span><br>출시한다.</h1>
+        <p>매주 금요일 자정까지, 작든 크든 하나를 세상에 내보내는 사람들의 모임. 완벽은 다음 주의 일이에요.</p>
+        <div class="proof"><span>멤버 2,318명</span><span>누적 출시 41,902건</span><span>변명 0건</span></div>
+      </div>
+
+      <div class="signup blk" id="signup">
+        <span class="sticker label">무료 · 금 23:59 마감</span>
+        <form id="form" novalidate>
+          <h3>이번 시즌 합류</h3>
+          <div class="field">
+            <label class="label" for="email">이메일</label>
+            <input class="input" id="email" type="email" autocomplete="email" placeholder="you@domain.com" aria-describedby="email-err" required>
+            <span class="err" id="email-err" aria-live="polite"></span>
+          </div>
+          <fieldset class="field chips" aria-describedby="role-err">
+            <legend class="label">주로 하는 일</legend>
+            <label class="chip"><input type="radio" name="role" value="개발"><span>개발</span></label>
+            <label class="chip"><input type="radio" name="role" value="디자인"><span>디자인</span></label>
+            <label class="chip"><input type="radio" name="role" value="기획"><span>기획</span></label>
+            <label class="chip"><input type="radio" name="role" value="그 외"><span>그 외</span></label>
+            <span class="err" id="role-err" aria-live="polite" style="flex-basis:100%"></span>
+          </fieldset>
+          <button class="btn o blk hit" type="submit">합류하기 →</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <section id="stats">
+    <div class="wrap">
+      <div class="sec-head"><h2>숫자는<br>거짓말을 <span class="plate o">덜</span> 해요.</h2><p>이번 시즌 멤버들이 남긴 기록. 스크롤이 닿으면 집계를 다시 돌려요.</p></div>
+      <div class="bento">
+        <div class="stat blk s1"><span class="label">이번 주 출시</span><span class="big" data-count="128">0</span><span>지난주보다 +17. 금요일 밤이 제일 바빠요.</span></div>
+        <div class="stat blk s2"><span class="label">최장 연속 출시</span><span class="big"><span data-count="47">0</span>주</span></div>
+        <div class="stat blk s3"><span class="label">평균 제출 시각</span><span class="big" style="font-size:clamp(40px,4.4vw,60px)">금 23:41</span></div>
+        <div class="stat blk s4">
+          <div><span class="label">최근 8주 출시 수</span><p style="margin-top:8px;max-width:22ch">꾸준함이 재능을 이겨요. 대부분은요.</p></div>
+          <div class="bars" aria-hidden="true">
+            <i style="--h:40%"></i><i style="--h:52%"></i><i style="--h:48%"></i><i style="--h:66%"></i><i style="--h:60%"></i><i style="--h:74%"></i><i style="--h:82%"></i><i style="--h:100%"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="board" style="background:var(--white)">
+    <div class="wrap">
+      <div class="sec-head"><h2>이번 주 체크리스트</h2><p>하나씩 지워 보세요. 다 지우면 패널이 바로 바뀌어요.</p></div>
+      <div class="board">
+        <div class="tasks blk" id="tasks">
+          <label class="task"><input type="checkbox"><span class="t">출시할 것 하나 정하기</span><span class="d label">월</span></label>
+          <label class="task"><input type="checkbox"><span class="t">범위를 절반으로 줄이기</span><span class="d label">화</span></label>
+          <label class="task"><input type="checkbox"><span class="t">못생긴 첫 버전 만들기</span><span class="d label">수–목</span></label>
+          <label class="task"><input type="checkbox"><span class="t">링크 공유하고 잠자기</span><span class="d label">금</span></label>
+        </div>
+        <div class="meter blk" id="meter" aria-live="polite">
+          <span class="label" id="meter-label">진행률</span>
+          <span class="pct"><span id="pct">0</span>%</span>
+          <div class="track"><div class="fill" id="fill"></div></div>
+          <strong id="meter-msg">아직 월요일 기분이에요.</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="quiz">
+    <div class="wrap">
+      <div class="sec-head"><h2>당신의 출시 유형은?</h2><p>질문 세 개, 10초. 결과는 정확하지 않을 수 있어요.</p></div>
+      <div class="quiz blk" id="quizBox" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section id="plans" style="background:var(--white)">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2>요금은 단순하게.</h2>
+        <div class="toggle" role="group" aria-label="결제 주기">
+          <button aria-pressed="true" data-cycle="m">월간</button>
+          <button aria-pressed="false" data-cycle="y">연간 −20%</button>
+        </div>
+      </div>
+      <div class="plans" id="plans-grid">
+        <button class="plan blk hit" aria-pressed="false" data-m="0" data-y="0"><span class="label">SOLO</span><span class="price"><span class="amt">₩0</span> <small>/ 월</small></span><ul><li>주간 마감 알림</li><li>공개 출시 로그</li></ul><span class="pick">선택하기 →</span></button>
+        <button class="plan blk hit" aria-pressed="true" data-m="9900" data-y="7900"><span class="badge label">제일 많이 고름</span><span class="label">CREW</span><span class="price"><span class="amt">₩9,900</span> <small>/ 월</small></span><ul><li>5인 크루 매칭</li><li>금요일 라이브 데모</li><li>연속 기록 보호권 2장</li></ul><span class="pick">선택됨 ✓</span></button>
+        <button class="plan blk hit" aria-pressed="false" data-m="29000" data-y="23200"><span class="label">STUDIO</span><span class="price"><span class="amt">₩29,000</span> <small>/ 월</small></span><ul><li>팀 대시보드</li><li>비공개 출시 스페이스</li><li>시즌 리포트</li></ul><span class="pick">선택하기 →</span></button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap" style="max-width:900px">
+      <div class="sec-head"><h2>자주 묻는 질문</h2></div>
+      <details><summary>금요일까지 못 끝내면요?</summary><p>끝난 만큼만 내면 돼요. "출시"의 기준은 링크 하나예요. 미완성도 링크는 있어요.</p></details>
+      <details><summary>혼자서도 할 수 있나요?</summary><p>SOLO 플랜으로 충분해요. 다만 크루가 있으면 금요일 밤이 덜 외로워요.</p></details>
+      <details><summary>실제로 있는 서비스인가요?</summary><p>아니요. 디자인 데모를 위해 만든 가상의 서비스예요. 폼도 어디로 전송되지 않아요.</p></details>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="huge" aria-hidden="true">SHIP IT.</div>
+    <div class="foot"><span>SHIPIT.CLUB — FICTIONAL DEMO</span><span>NEO-BRUTALISM · 2026</span></div>
+  </div>
+</footer>
+
+<script>
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── signup: client-side validation only (nothing is sent anywhere) ──
+  const form = $('#form');
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = $('#email');
+    const role = form.querySelector('input[name="role"]:checked');
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.value.trim());
+    email.setAttribute('aria-invalid', !emailOk);
+    $('#email-err').textContent = emailOk ? '' : '이메일 형식을 확인해 주세요.';
+    $('#role-err').textContent = role ? '' : '하나만 골라 주세요.';
+    if (!emailOk) return email.focus();
+    if (!role) return form.querySelector('input[name="role"]').focus();
+    const no = 2319 + Math.floor(Math.random() * 40);
+    const card = $('#signup');
+    card.innerHTML = `<span class="sticker label">합류 완료</span>
+      <div class="done" tabindex="-1"><span class="label">멤버 번호</span><div class="num">#${no}</div>
+      <p><b>${role.value}</b> 크루로 배정했어요. 첫 마감은 이번 주 금요일 23:59예요.</p></div>`;
+    $('.done', card).focus();
+  });
+
+  // ── stats: stepped count-up when the bento enters view ──
+  const counters = $$('[data-count]');
+  const countUp = (el) => {
+    const target = Number(el.dataset.count);
+    if (reduceMotion) { el.textContent = target; return; }
+    let step = 0;
+    const id = setInterval(() => {
+      step += 1;
+      el.textContent = Math.round(target * step / 12);
+      if (step === 12) clearInterval(id);
+    }, 45);
+  };
+  new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (en.isIntersecting) counters.forEach(countUp);
+  }), { threshold: 0.4 }).observe($('.bento'));
+
+  // ── checklist meter ──
+  const boxes = $$('#tasks input');
+  const MSGS = ['아직 월요일 기분이에요.', '시작이 반이래요. 진짜로요.', '절반 넘었어요. 범위 늘리지 마세요.', '거의 다 왔어요. 링크만 남았어요.', '출시 완료! 이제 자도 돼요.'];
+  const syncMeter = () => {
+    const done = boxes.filter((b) => b.checked).length;
+    const p = done / boxes.length;
+    $('#pct').textContent = Math.round(p * 100);
+    $('#fill').style.setProperty('--p', p);
+    $('#meter-msg').textContent = MSGS[done];
+    $('#meter').classList.toggle('full', done === boxes.length);
+  };
+  boxes.forEach((b) => b.addEventListener('change', syncMeter));
+
+  // ── quiz ──
+  const QS = [
+    { q: '금요일 밤 11시, 기능이 반만 됐다면?', o: [['A', '된 반쪽만 낸다'], ['B', '밤새서 마저 한다'], ['C', '다음 주로 미룬다']] },
+    { q: '첫 버전의 디자인은?', o: [['A', '기본 스타일 그대로'], ['B', '로고부터 만든다'], ['C', '레퍼런스만 3일 본다']] },
+    { q: '출시 후 가장 먼저 하는 일은?', o: [['A', '잔다'], ['B', '버그를 찾는다'], ['C', '다시 갈아엎는다']] },
+  ];
+  const TYPES = {
+    A: { face: '>_', name: '일단 던지기형', desc: '완성도보다 속도. 당신의 링크는 언제나 제일 먼저 올라와요. 다음 주엔 테스트 하나만 추가해 봐요.' },
+    B: { face: '☾', name: '새벽 배포형', desc: '마감 직전의 집중력이 무기예요. 대신 수요일에 미리 반쯤 해 두면 금요일이 훨씬 평화로워요.' },
+    C: { face: '∞', name: '완벽주의 지연형', desc: '기준이 높은 건 장점이에요. 이번 주는 범위를 딱 절반으로 자르고, 그대로 내보내 보세요.' },
+  };
+  const box = $('#quizBox');
+  let step = 0, picks = [];
+  function renderQuiz() {
+    if (step === QS.length) return renderResult();
+    const { q, o } = QS[step];
+    box.innerHTML = `
+      <div class="q-top"><span class="label">Q${step + 1} / ${QS.length}</span>
+        <span class="dots" aria-hidden="true">${QS.map((_, i) => `<i class="${i < step ? 'on' : ''}"></i>`).join('')}</span></div>
+      <p class="q-text">${q}</p>
+      <div class="opts">${o.map(([k, t]) => `<button class="opt blk hit" data-k="${k}"><b>${k}</b>${t}</button>`).join('')}</div>`;
+  }
+  function renderResult() {
+    const tally = picks.reduce((m, k) => ({ ...m, [k]: (m[k] || 0) + 1 }), {});
+    const top = Object.keys(tally).sort((a, b) => tally[b] - tally[a])[0];
+    const t = TYPES[top];
+    box.innerHTML = `
+      <div class="result"><div class="face blk" aria-hidden="true">${t.face}</div>
+        <div><span class="label">당신은</span><h3>${t.name}</h3><p>${t.desc}</p>
+        <button class="btn blk hit" id="again">다시 하기 ↺</button></div></div>`;
+    $('#again').focus();
+  }
+  box.addEventListener('click', (e) => {
+    if (e.target.closest('#again')) { step = 0; picks = []; renderQuiz(); $('.opt', box).focus(); return; }
+    const opt = e.target.closest('.opt');
+    if (!opt) return;
+    picks = [...picks, opt.dataset.k];
+    step += 1;
+    renderQuiz();
+    $('.opt', box)?.focus();
+  });
+  renderQuiz();
+
+  // ── plans: billing toggle + single selection ──
+  const fmt = (n) => `₩${Number(n).toLocaleString('ko-KR')}`;
+  const plans = $$('.plan');
+  $$('.toggle button').forEach((btn) => btn.addEventListener('click', () => {
+    $$('.toggle button').forEach((b) => b.setAttribute('aria-pressed', b === btn));
+    const yearly = btn.dataset.cycle === 'y';
+    plans.forEach((p) => { $('.amt', p).textContent = fmt(yearly ? p.dataset.y : p.dataset.m); });
+  }));
+  plans.forEach((p) => p.addEventListener('click', () => plans.forEach((x) => {
+    const on = x === p;
+    x.setAttribute('aria-pressed', on);
+    $('.pick', x).textContent = on ? '선택됨 ✓' : '선택하기 →';
+  })));
+</script>
+</body>
+</html>

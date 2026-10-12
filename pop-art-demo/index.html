@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SFX MART</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;900&family=Bangers&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+  /* tokens — design-isms: dev-guides.json["pop-art"] */
+  :root {
+    --yellow: #FFF04A;
+    --ink: #111111;
+    --red: #E72E5B;
+    --blue: #1E8CFF;
+    --paper: #FFFDF2;
+
+    --line: 4px;
+    --shadow: 6px 6px 0 var(--ink);
+    --shadow-up: 10px 10px 0 var(--ink);
+    --gutter: 16px;
+    --margin: 32px;
+    --space: 24px;
+    --ease: cubic-bezier(.2, 1.4, .4, 1); /* ease-out with overshoot = "pop" */
+    --dur: 250ms;
+
+    --display: "Archivo", "Black Han Sans", system-ui, sans-serif;
+    --sfx: "Bangers", "Black Han Sans", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--yellow);
+    color: var(--ink);
+    font: 500 18px/1.3 var(--display);
+    font-synthesis: none;
+    overflow-x: hidden;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: var(--line) solid var(--blue); outline-offset: 4px; }
+
+  /* one halftone method everywhere: CSS radial dots */
+  .dots {
+    --dot: var(--ink);
+    --size: 14px;
+    --r: 22%;
+    background-image: radial-gradient(circle, var(--dot) var(--r), transparent calc(var(--r) + 1px));
+    background-size: var(--size) var(--size);
+  }
+
+  .box {
+    border: var(--line) solid var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .pop {
+    transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+  .pop:hover { transform: translate(-4px, -4px) rotate(var(--tilt, 0deg)); box-shadow: var(--shadow-up); }
+  .pop:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--ink); transition-duration: 80ms; }
+
+  /* header */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px var(--margin);
+    background: var(--paper);
+    border-bottom: var(--line) solid var(--ink);
+  }
+  .logo {
+    font: 400 30px/1 var(--sfx); letter-spacing: .02em;
+    background: var(--red); color: var(--paper);
+    padding: 6px 14px 4px; transform: rotate(-3deg);
+    -webkit-text-stroke: 1.5px var(--ink); paint-order: stroke fill;
+  }
+  .cart {
+    display: flex; gap: 10px; align-items: center;
+    background: var(--yellow); padding: 8px 14px;
+    font-weight: 900;
+  }
+  .cart b {
+    display: grid; place-items: center; min-width: 32px; height: 32px; padding: 0 6px;
+    background: var(--ink); color: var(--yellow); border-radius: 99px;
+  }
+  .cart.bump b { animation: bump 400ms var(--ease); }
+  @keyframes bump { 40% { transform: scale(1.6) rotate(-12deg); } }
+
+  /* hero: dots swell where the cursor is */
+  .hero {
+    position: relative; isolation: isolate; overflow: hidden;
+    min-height: calc(100svh - 70px);
+    display: grid; align-content: center;
+    padding: 64px var(--margin);
+    border-bottom: var(--line) solid var(--ink);
+    --x: 70%; --y: 40%;
+  }
+  .hero::before, .hero::after { content: ""; position: absolute; inset: 0; z-index: -1; }
+  .hero::before {
+    background-image: radial-gradient(circle, var(--red) 14%, transparent 15%);
+    background-size: 18px 18px;
+    opacity: .55;
+  }
+  .hero::after {
+    background-image: radial-gradient(circle, var(--red) 42%, transparent 43%);
+    background-size: 18px 18px;
+    -webkit-mask: radial-gradient(circle 260px at var(--x) var(--y), #000 0 30%, transparent 100%);
+            mask: radial-gradient(circle 260px at var(--x) var(--y), #000 0 30%, transparent 100%);
+  }
+  .hero-copy { max-width: 900px; position: relative; }
+  .kicker {
+    display: inline-block; margin-bottom: var(--space);
+    background: var(--blue); color: var(--paper);
+    padding: 6px 12px; font-weight: 900; letter-spacing: .04em;
+    transform: rotate(-2deg);
+  }
+  h1, h2 {
+    font-family: "Black Han Sans", var(--display); font-weight: 400;
+    letter-spacing: -0.05em; line-height: 1;
+  }
+  h1 { font-size: clamp(56px, 11vw, 148px); }
+  h1 .hl {
+    display: inline-block; color: var(--red);
+    -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+    text-shadow: 6px 6px 0 var(--ink);
+  }
+  h2 { font-size: clamp(40px, 6vw, 68px); }
+  .lede {
+    max-width: 30ch; margin-top: var(--space);
+    font-size: clamp(18px, 2vw, 22px); background: var(--paper);
+    padding: 12px 16px; border: var(--line) solid var(--ink);
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: var(--space); align-items: center; margin-top: 40px; }
+  .sticker-btn {
+    background: var(--red); color: var(--paper);
+    font: 400 28px/1 var(--sfx); letter-spacing: .04em;
+    padding: 16px 28px 12px; --tilt: -2deg;
+    -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill;
+  }
+  .hint { font-weight: 900; }
+  .hint kbd { font: inherit; background: var(--ink); color: var(--yellow); padding: 2px 8px; }
+
+  .burst {
+    position: absolute; right: 6vw; top: 14%;
+    width: clamp(150px, 20vw, 240px); aspect-ratio: 1;
+    display: grid; place-items: center; text-align: center;
+    color: var(--ink); font: 400 clamp(26px, 3vw, 38px)/.95 var(--sfx);
+    animation: wobble 2.4s ease-in-out infinite;
+  }
+  .burst svg { position: absolute; inset: 0; z-index: -1; filter: drop-shadow(6px 6px 0 var(--ink)); }
+  .burst small { display: block; font-size: .55em; }
+  @keyframes wobble { 50% { transform: rotate(8deg) scale(1.05); } }
+
+  /* marquee */
+  .marquee {
+    overflow: hidden; background: var(--blue); color: var(--paper);
+    border-bottom: var(--line) solid var(--ink);
+    font: 400 34px/1 var(--sfx); letter-spacing: .06em;
+    -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill;
+  }
+  .marquee div { display: flex; width: max-content; animation: slide 22s linear infinite; padding: 14px 0 10px; }
+  .marquee span { padding: 0 28px; }
+  .marquee span:nth-child(odd) { color: var(--yellow); }
+  @keyframes slide { to { transform: translateX(-50%); } }
+
+  section { padding: 88px var(--margin); }
+  .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: var(--space); margin-bottom: 48px; }
+  .section-head p { max-width: 34ch; font-size: 18px; text-wrap: balance; }
+
+  /* product cards */
+  .shop { background: var(--paper); border-bottom: var(--line) solid var(--ink); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: calc(var(--gutter) * 2); }
+  .card { background: var(--paper); display: flex; flex-direction: column; }
+  .card:nth-child(3n+1) { --tilt: -1deg; }
+  .card:nth-child(3n+2) { --tilt: 1.2deg; }
+  .card-art {
+    position: relative; aspect-ratio: 4 / 3; display: grid; place-items: center;
+    background-color: var(--c); border-bottom: var(--line) solid var(--ink);
+    overflow: hidden;
+  }
+  .card-art.dots { --dot: rgba(17,17,17,.22); --size: 12px; }
+  .card-art .word {
+    font: 400 clamp(56px, 6vw, 80px)/1 var(--sfx); color: var(--fg, var(--paper));
+    -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+    text-shadow: 5px 5px 0 var(--ink);
+    transform: rotate(-6deg);
+    transition: transform var(--dur) var(--ease);
+  }
+  .card:hover .word { transform: rotate(-2deg) scale(1.12); }
+  .card.hit .word { animation: hit 450ms var(--ease); }
+  @keyframes hit { 30% { transform: rotate(8deg) scale(1.4); } }
+  .card-body { padding: 18px 20px 20px; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; }
+  .card-body h3 { font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
+  .card-body p { grid-column: 1; font-size: 15px; }
+  .card-body .price { grid-row: 1 / 3; grid-column: 2; }
+  .add {
+    background: var(--yellow); border: var(--line) solid var(--ink); box-shadow: 4px 4px 0 var(--ink);
+    padding: 10px 14px; font-weight: 900; white-space: nowrap;
+    transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  }
+  .add:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+  .add:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+
+  /* repetition */
+  .repeat { border-bottom: var(--line) solid var(--ink); }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gutter); }
+  .tile {
+    aspect-ratio: 1; padding: 0; background: var(--bg); display: grid; place-items: center;
+    border: var(--line) solid var(--ink);
+    transition: background-color var(--dur) ease-out;
+  }
+  .tile svg { width: 72%; transition: transform var(--dur) var(--ease); }
+  .tile:hover svg { transform: scale(1.1) rotate(-6deg); }
+  .tile .bubble { fill: var(--fg); stroke: var(--ink); stroke-width: 6; }
+  .tile .mark { fill: var(--ink); }
+
+  /* comic strip */
+  .strip { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); }
+  .panel {
+    background: var(--paper); padding: var(--space); min-height: 280px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    opacity: 0; transform: translateY(40px) rotate(-2deg);
+    transition: opacity 400ms ease-out, transform 500ms var(--ease);
+  }
+  .panel.in { opacity: 1; transform: none; }
+  .panel:nth-child(2) { transition-delay: 120ms; background: var(--blue); color: var(--paper); }
+  .panel:nth-child(3) { transition-delay: 240ms; background: var(--red); color: var(--paper); }
+  .panel .num { font: 400 72px/1 var(--sfx); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; color: var(--yellow); }
+  .panel h3 { font: 400 34px/1.05 "Black Han Sans", var(--display); letter-spacing: -0.04em; }
+  .caption { background: var(--yellow); color: var(--ink); border: 3px solid var(--ink); padding: 6px 10px; font-size: 15px; font-weight: 900; align-self: flex-start; }
+
+  footer { padding: 24px var(--margin); background: var(--ink); color: var(--yellow); font-weight: 900; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  /* click-anywhere stickers */
+  .fx {
+    position: absolute; z-index: 50; pointer-events: none;
+    font: 400 var(--fs, 56px)/1 var(--sfx); color: var(--c);
+    -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill;
+    text-shadow: 4px 4px 0 var(--ink);
+    translate: -50% -50%;
+    animation: fx 900ms var(--ease) forwards;
+  }
+  @keyframes fx {
+    0% { transform: scale(.2) rotate(var(--rot)); opacity: 1; }
+    35% { transform: scale(1.15) rotate(var(--rot)); }
+    70% { transform: scale(1) rotate(var(--rot)); opacity: 1; }
+    100% { transform: scale(1.05) rotate(var(--rot)) translateY(-24px); opacity: 0; }
+  }
+
+  @media (max-width: 760px) {
+    :root { --margin: 16px; }
+    .burst { position: relative; right: auto; top: auto; margin: 32px 0 0 auto; }
+    .tiles { grid-template-columns: repeat(2, 1fr); }
+    .strip { grid-template-columns: 1fr; }
+    section { padding: 64px var(--margin); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+    .panel { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <span class="logo box">SFX MART!</span>
+  <button class="cart box" id="cart" aria-label="장바구니">장바구니 <b id="count" aria-live="polite">0</b></button>
+</header>
+
+<main>
+  <section class="hero" id="hero">
+    <div class="hero-copy">
+      <span class="kicker box">효과음 전문 상점 · EST. 2026</span>
+      <h1>조용한 하루에<br><span class="hl">소리를 팝니다.</span></h1>
+      <p class="lede">만화 속 의성어를 한 봉지씩. 붙이는 순간, 평범한 장면이 시끄러워집니다.</p>
+      <div class="hero-actions">
+        <a class="sticker-btn box pop" href="#shop" style="text-decoration:none">SHOP THE NOISE →</a>
+        <span class="hint">빈 곳을 <kbd>클릭</kbd> 해 보세요</span>
+      </div>
+    </div>
+    <div class="burst" aria-hidden="true">
+      <svg viewBox="0 0 100 100"><polygon fill="#FFF04A" stroke="#111" stroke-width="3" points="50,2 58,22 78,10 74,32 96,32 80,48 98,62 76,66 84,88 62,78 54,98 46,80 26,94 28,72 6,74 20,56 2,42 24,36 14,16 36,22"/></svg>
+      <span>NEW!<small>1봉 990원</small></span>
+    </div>
+  </section>
+
+  <div class="marquee" aria-hidden="true"><div id="marquee"></div></div>
+
+  <section class="shop" id="shop">
+    <div class="section-head">
+      <h2>이번 주 인기 소리</h2>
+      <p>강한 색면 하나에 소리 하나. 마음에 드는 걸 담으면 카드가 대신 외쳐 줍니다.</p>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="repeat">
+    <div class="section-head">
+      <h2>같은 말풍선, 여덟 번.</h2>
+      <p>반복하면 상품이 됩니다. 타일을 눌러 색을 바꿔 보세요.</p>
+    </div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <section>
+    <div class="section-head"><h2>사용법, 3컷.</h2></div>
+    <div class="strip">
+      <article class="panel box"><span class="num">1</span><h3>고른다.</h3><span class="caption">그 순간, 마음속에서…</span></article>
+      <article class="panel box"><span class="num">2</span><h3>붙인다.</h3><span class="caption">찰싹!</span></article>
+      <article class="panel box"><span class="num">3</span><h3>시끄러워진다.</h3><span class="caption">이웃에게 미리 사과하세요.</span></article>
+    </div>
+  </section>
+</main>
+
+<footer><span>SFX MART! — 가상의 브랜드, 데모 페이지</span><span>POP · 2026</span></footer>
+
+<script>
+  const C = { yellow: '#FFF04A', ink: '#111111', red: '#E72E5B', blue: '#1E8CFF', paper: '#FFFDF2' };
+  const WORDS = ['POW!', 'BAM!', 'ZAP!', 'WHAM!', '쾅!', '짠!', 'BOOM!', '팡!'];
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+  // hero: move the swollen-dot spotlight with the pointer
+  const hero = document.getElementById('hero');
+  hero.addEventListener('pointermove', (e) => {
+    const r = hero.getBoundingClientRect();
+    hero.style.setProperty('--x', `${e.clientX - r.left}px`);
+    hero.style.setProperty('--y', `${e.clientY - r.top}px`);
+  });
+
+  // marquee: content duplicated once so the -50% loop is seamless
+  const tape = ['KAPOW', '★', '두근두근', '★', 'SPLASH', '★', '쿵쾅', '★', 'WHOOSH', '★'];
+  document.getElementById('marquee').innerHTML = [...tape, ...tape, ...tape, ...tape].map((t) => `<span>${t}</span>`).join('');
+
+  // products
+  const PRODUCTS = [
+    { word: 'BAM!',  name: '정면충돌 BAM',   note: '문 닫을 때 추천', price: '990원',   bg: C.red,    fg: C.yellow },
+    { word: 'ZZZ…',  name: '월요일 ZZZ',     note: '회의 중 사용 금지', price: '1,490원', bg: C.blue,   fg: C.paper },
+    { word: '쾅!',   name: '한글 쾅',         note: '국산 무첨가',       price: '1,200원', bg: C.yellow, fg: C.red },
+    { word: 'WHOOSH', name: '바람 WHOOSH',   note: '퇴근길 전용',       price: '1,990원', bg: C.ink,    fg: C.yellow },
+    { word: '두근!',  name: '고백 두근',      note: '한정 수량',         price: '2,490원', bg: C.red,    fg: C.paper },
+    { word: 'POP!',  name: '오리지널 POP',   note: '스테디셀러',        price: '990원',   bg: C.blue,   fg: C.yellow },
+  ];
+  const grid = document.getElementById('grid');
+  grid.innerHTML = PRODUCTS.map((p, i) => `
+    <article class="card box pop">
+      <div class="card-art dots" style="--c:${p.bg};--fg:${p.fg}"><span class="word">${p.word}</span></div>
+      <div class="card-body">
+        <h3>${p.name}</h3>
+        <p>${p.note}</p>
+        <button class="add" data-i="${i}" aria-label="${p.name} 담기, ${p.price}">${p.price} 담기</button>
+      </div>
+    </article>`).join('');
+
+  const cart = document.getElementById('cart');
+  const count = document.getElementById('count');
+  let total = 0;
+  grid.addEventListener('click', (e) => {
+    const btn = e.target.closest('.add');
+    if (!btn) return;
+    const card = btn.closest('.card');
+    total += 1;
+    count.textContent = total;
+    restart(cart, 'bump');
+    restart(card, 'hit');
+    const r = btn.getBoundingClientRect();
+    spawn(r.left + r.width / 2 + scrollX, r.top + scrollY - 10, PRODUCTS[btn.dataset.i].word, 44);
+  });
+
+  // repetition tiles: same motif, rotating palette combos on click
+  const COMBOS = [
+    [C.red, C.yellow], [C.blue, C.paper], [C.yellow, C.red], [C.ink, C.yellow],
+    [C.paper, C.blue], [C.blue, C.yellow], [C.red, C.paper], [C.yellow, C.blue],
+  ];
+  const bubble = `<svg viewBox="0 0 120 120" aria-hidden="true"><path class="bubble" d="M60 12c27 0 48 17 48 40s-21 40-48 40c-6 0-12-1-17-3L18 104l8-22C17 74 12 64 12 52c0-23 21-40 48-40z"/><rect class="mark" x="54" y="28" width="12" height="34" rx="3"/><circle class="mark" cx="60" cy="74" r="7"/></svg>`;
+  const tiles = document.getElementById('tiles');
+  tiles.innerHTML = COMBOS.map((_, i) => `<button class="tile" data-k="${i}" aria-label="말풍선 타일 ${i + 1}, 색 바꾸기">${bubble}</button>`).join('');
+  const paint = (t) => {
+    const [bg, fg] = COMBOS[t.dataset.k % COMBOS.length];
+    t.style.setProperty('--bg', bg);
+    t.style.setProperty('--fg', fg);
+  };
+  tiles.querySelectorAll('.tile').forEach(paint);
+  tiles.addEventListener('click', (e) => {
+    const t = e.target.closest('.tile');
+    if (!t) return;
+    t.dataset.k = Number(t.dataset.k) + 3;
+    paint(t);
+  });
+
+  // comic panels reveal on scroll
+  const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); }
+  }), { threshold: 0.3 });
+  document.querySelectorAll('.panel').forEach((p) => io.observe(p));
+
+  // click anywhere (not on controls) → sound-effect sticker
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('button, a')) return;
+    spawn(e.pageX, e.pageY, pick(WORDS));
+  });
+
+  function spawn(x, y, text, size) {
+    const el = document.createElement('span');
+    el.className = 'fx';
+    el.textContent = text;
+    el.setAttribute('aria-hidden', 'true');
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    el.style.setProperty('--c', pick([C.red, C.blue, C.yellow, C.paper]));
+    el.style.setProperty('--rot', `${Math.random() * 30 - 15}deg`);
+    el.style.setProperty('--fs', `${size || 44 + Math.random() * 36}px`);
+    el.addEventListener('animationend', () => el.remove());
+    document.body.appendChild(el);
+  }
+  function restart(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth; // reflow so the animation replays
+    el.classList.add(cls);
+  }
+</script>
+</body>
+</html>

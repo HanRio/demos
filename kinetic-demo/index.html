@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TEMPO 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&family=Noto+Sans+KR:wght@300..900&display=swap" rel="stylesheet">
+<style>
+  /* tokens — design-isms: dev-guides.json["kinetic-typography"] + effects.json["bottom-sheet"] */
+  :root {
+    --bg: #000000;
+    --fg: #FFFFFF;
+    --hot: #FF4500;
+    --blue: #1E90FF;
+    --dim: #8A8A8A;
+    --line: #262626;
+
+    --margin: 24px;
+    --space: 48px;
+    --ease: cubic-bezier(0.23, 1, 0.32, 1);
+    --dur: 600ms;
+    --sans: "Roboto Flex", "Noto Sans KR", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html { background: var(--bg); }
+  body { background: var(--bg); color: var(--fg); font: 400 20px/1.5 var(--sans); overflow-x: hidden; }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+  .flex { font-family: var(--sans); font-optical-sizing: auto; }
+  .eyebrow { font-size: 13px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+
+  /* nav — words that scramble on hover */
+  nav { position: fixed; inset: 0 0 auto; z-index: 20; display: flex; justify-content: space-between; align-items: center;
+    padding: 18px var(--margin); mix-blend-mode: difference; }
+  .mark { font-weight: 900; letter-spacing: -0.04em; font-variation-settings: "wdth" 130; }
+  .nav-links { display: flex; gap: 28px; }
+  .nav-links a { color: var(--fg); text-decoration: none; font-size: 15px; font-weight: 700; letter-spacing: .08em; font-variant-numeric: tabular-nums; }
+
+  /* hero — pointer bends each letter's weight/width; letters breathe on the beat */
+  .hero { min-height: 100svh; display: grid; place-items: center; align-content: center; gap: 24px; padding: 96px var(--margin) 120px; position: relative; text-align: center; }
+  .word { display: flex; justify-content: center; font-size: min(24vw, 320px); line-height: .82; letter-spacing: -0.08em; font-weight: 400; user-select: none; }
+  .word span { display: inline-block; font-variation-settings: "wght" var(--w, 400), "wdth" var(--x, 100);
+    scale: 1 var(--sy, 1); opacity: var(--op, 1); transform-origin: 50% 100%;
+    animation: rise 1100ms var(--ease) both; animation-delay: calc(var(--i) * 70ms); }
+  .word span:nth-child(odd) { color: var(--fg); }
+  .word span:nth-child(3) { color: var(--hot); }
+  @keyframes rise { from { transform: translateY(60%) rotate(8deg); opacity: 0; } }
+  .sub { max-width: 30ch; font-size: clamp(18px, 2.2vw, 24px); font-weight: 500; }
+  .sub b { color: var(--hot); font-weight: 800; }
+  .bpm { position: absolute; left: var(--margin); bottom: 32px; display: grid; gap: 8px; text-align: left; }
+  .deck { display: flex; gap: 8px; margin-top: 4px; }
+  .deck button { height: 40px; padding: 0 14px; border-radius: 999px; border: 2px solid var(--fg); background: none; font-size: 14px; font-weight: 800; cursor: pointer; transition: background-color 200ms, color 200ms; }
+  .deck button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+  .seq { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; width: min(76vw, 640px); margin-top: -4px; }
+  .seq i { height: 6px; border-radius: 2px; background: var(--line); transition: background-color 90ms; }
+  .seq i:nth-child(4n+1) { background: #3a3a3a; }
+  .seq i.on { background: var(--hot); }
+  .now { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .now b { color: var(--hot); }
+  .bpm output { font-size: 40px; font-weight: 800; font-variation-settings: "wdth" 60; font-variant-numeric: tabular-nums; line-height: 1; }
+  .bpm input { width: 180px; accent-color: var(--hot); }
+  .scroll-cue { position: absolute; right: var(--margin); bottom: 32px; font-size: 14px; color: var(--dim); writing-mode: vertical-rl; letter-spacing: .2em; }
+
+  /* scroll-driven headline — one headline, three lines sliding against each other */
+  .ride { height: 260vh; position: relative; }
+  .ride-stage { position: sticky; top: 0; height: 100svh; display: grid; align-content: center; overflow: hidden; }
+  .ride-line { white-space: nowrap; font-size: clamp(64px, 14vw, 220px); line-height: .95; letter-spacing: -0.08em;
+    font-variation-settings: "wght" var(--w, 300), "wdth" var(--x, 100);
+    transform: translate3d(var(--tx, 0), 0, 0); will-change: transform; }
+  .ride-line:nth-child(2) { color: var(--hot); padding-left: 10vw; }
+  .ride-line:nth-child(3) { -webkit-text-stroke: 2px var(--fg); color: transparent; }
+
+  /* marquee — scroll velocity drives speed and direction */
+  .marquee { border-block: 1px solid var(--line); overflow: hidden; padding: 20px 0; }
+  .track { display: flex; width: max-content; will-change: transform; }
+  .track span { font-size: clamp(40px, 6vw, 88px); font-weight: 800; letter-spacing: -0.06em; padding-right: .5em; font-variation-settings: "wdth" 120; }
+  .track span:nth-child(even) { color: var(--blue); font-weight: 300; font-style: italic; }
+  .marquee.b .track span:nth-child(even) { color: var(--hot); }
+
+  /* lineup */
+  section.lineup { padding: 120px var(--margin); }
+  .lineup h2 { font-size: clamp(48px, 7vw, 80px); line-height: 1.1; letter-spacing: -0.08em; font-weight: 800; margin-bottom: var(--space); }
+  .rows { list-style: none; padding: 0; border-top: 1px solid var(--line); }
+  .row { position: relative; display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 16px;
+    padding: 18px 0; border-bottom: 1px solid var(--line); cursor: pointer; isolation: isolate; }
+  .row::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--hot); transform: scaleY(0); transform-origin: bottom; transition: transform 380ms var(--ease); }
+  .row:hover::before, .row:focus-within::before { transform: scaleY(1); }
+  .row:hover, .row:focus-within { color: var(--bg); }
+  .row time { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; padding-left: 8px; }
+  .row .name { font-size: clamp(30px, 5.2vw, 72px); line-height: 1; letter-spacing: -0.06em; font-variation-settings: "wght" 300, "wdth" 90;
+    transition: font-variation-settings var(--dur) var(--ease), letter-spacing var(--dur) var(--ease); }
+  .row:hover .name, .row:focus-within .name { font-variation-settings: "wght" 900, "wdth" 125; letter-spacing: -0.04em; }
+  .row button { border: 2px solid currentColor; background: none; border-radius: 999px; padding: 8px 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-right: 8px; white-space: nowrap; }
+  .row button::after { content: ""; position: absolute; inset: 0; }   /* whole row is the hit area */
+
+  /* sticky CTA — always clear of moving type */
+  .cta { position: fixed; z-index: 30; right: var(--margin); bottom: 24px; display: flex; align-items: center; gap: 12px;
+    padding: 14px 22px; border: 0; border-radius: 999px; background: var(--fg); color: var(--bg); font-weight: 800; font-size: 17px; cursor: pointer;
+    transition: transform 300ms var(--ease), background-color 300ms var(--ease); }
+  .cta:hover { background: var(--hot); transform: translateY(-3px); }
+  .cta small { font-weight: 600; opacity: .7; }
+
+  footer { padding: 80px var(--margin) 140px; border-top: 1px solid var(--line); color: var(--dim); font-size: 15px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  /* ───── bottom sheet (native dialog) ───── */
+  dialog.sheet {
+    width: min(100% - 16px, 560px); max-width: none; max-height: 86dvh; margin: auto auto 8px; padding: 0; border: 0;
+    border-radius: 28px 28px 18px 18px; background: var(--fg); color: var(--bg);
+    box-shadow: 0 -24px 60px rgb(0 0 0 / .5); overflow: hidden;
+  }
+  dialog.sheet[open] { animation: sheet-in 420ms var(--ease); }
+  dialog.sheet.closing { animation: sheet-out 260ms cubic-bezier(.4, 0, 1, 1) forwards; }
+  dialog.sheet::backdrop { background: rgb(0 0 0 / .62); }
+  dialog.sheet[open]::backdrop { animation: fade 300ms ease-out; }
+  dialog.sheet.closing::backdrop { animation: fade 260ms ease-in reverse forwards; }
+  @keyframes sheet-in { from { transform: translateY(100%); } }
+  @keyframes sheet-out { to { transform: translateY(100%); } }
+  @keyframes fade { from { opacity: 0; } }
+  .sheet-body { display: grid; gap: 18px; padding: 10px 24px 24px; overflow-y: auto; max-height: 86dvh; }
+  .grab { display: grid; place-items: center; height: 28px; cursor: grab; touch-action: none; }
+  .grab::before { content: ""; width: 48px; height: 5px; border-radius: 99px; background: #C9C9C9; }
+  .sheet h2 { font-size: 34px; line-height: 1; letter-spacing: -0.06em; font-variation-settings: "wght" 850, "wdth" 115; }
+  .sheet .eyebrow { color: #555; }
+  .days { display: grid; gap: 10px; border: 0; padding: 0; }
+  .day { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; min-height: 64px; padding: 12px 16px;
+    border: 2px solid #E2E2E2; border-radius: 16px; cursor: pointer; transition: border-color 200ms, background-color 200ms; }
+  .day input { accent-color: var(--hot); width: 20px; height: 20px; }
+  .day b { display: block; font-size: 18px; letter-spacing: -0.03em; }
+  .day small { color: #555; font-size: 14px; }
+  .day .p { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .day:has(input:checked) { border-color: var(--bg); background: #FFF1EB; }
+  .qty { display: flex; justify-content: space-between; align-items: center; }
+  .stepper { display: flex; align-items: center; gap: 4px; border: 2px solid #E2E2E2; border-radius: 999px; padding: 4px; }
+  .stepper button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: #F1F1F1; font-size: 22px; font-weight: 700; cursor: pointer; }
+  .stepper button:disabled { opacity: .35; cursor: default; }
+  .stepper output { min-width: 40px; text-align: center; font-weight: 800; font-size: 20px; font-variant-numeric: tabular-nums; }
+  .sheet-foot { display: flex; gap: 10px; }
+  .sheet-foot button { min-height: 52px; border-radius: 14px; font-weight: 800; cursor: pointer; }
+  .btn-ghost { flex: 0 0 auto; padding: 0 18px; border: 2px solid #D6D6D6; background: none; }
+  .btn-main { flex: 1; border: 0; background: var(--bg); color: var(--fg); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; transition: background-color 200ms; }
+  .btn-main:hover { background: var(--hot); color: var(--bg); }
+  .total { font-variant-numeric: tabular-nums; }
+
+  .steps { display: flex; gap: 6px; list-style: none; padding: 0; counter-reset: s; }
+  .steps li { flex: 1; padding-top: 8px; border-top: 4px solid #E2E2E2; font-size: 13px; font-weight: 700; color: #888; transition: border-color 300ms, color 300ms; }
+  .steps li.on { border-color: var(--hot); color: var(--bg); }
+  .step { display: grid; gap: 18px; animation: step-in 420ms var(--ease); }
+  .step.back { animation-name: step-back; }
+  @keyframes step-in { from { transform: translateX(40px); opacity: 0; } }
+  @keyframes step-back { from { transform: translateX(-40px); opacity: 0; } }
+  .summary { display: grid; gap: 10px; padding: 16px; border-radius: 16px; background: #F4F4F4; }
+  .summary div { display: flex; justify-content: space-between; gap: 12px; font-size: 16px; }
+  .summary dt { color: #555; }
+  .summary dd { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .summary .grand { border-top: 2px solid #DDD; padding-top: 10px; font-size: 20px; }
+  .summary .grand dt { color: var(--bg); font-weight: 800; }
+  .summary .grand dd { font-weight: 900; color: var(--hot); }
+  .methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; border: 0; padding: 0; }
+  .method { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 10px 14px; border: 2px solid #E2E2E2; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .method input { accent-color: var(--hot); }
+  .method:has(input:checked) { border-color: var(--bg); background: #FFF1EB; }
+  .agree { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+  .agree input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--hot); flex: none; }
+  .err { min-height: 0; color: #C2410C; font-size: 14px; font-weight: 700; margin-top: -10px; }
+  .err:empty { display: none; }
+  .demo-note { font-size: 13px; color: #666; }
+  .btn-main[aria-busy="true"] { pointer-events: none; opacity: .75; }
+  .btn-main[aria-busy="true"] #payLabel::after { content: ""; display: inline-block; width: 14px; height: 14px; margin-left: 10px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 700ms linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .done { text-align: center; justify-items: center; padding: 8px 0 4px; }
+  .done .sheet-foot { width: 100%; }
+  .check { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; background: var(--hot); color: var(--bg); font-size: 40px; font-weight: 900; animation: pop 600ms var(--ease) both; }
+  @keyframes pop { from { transform: scale(0) rotate(-90deg); } }
+
+  /* confirmation burst */
+  .burst { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; pointer-events: none; }
+  .burst p { display: flex; font-size: clamp(56px, 13vw, 200px); letter-spacing: -0.08em; line-height: .9; color: var(--hot); font-variation-settings: "wght" 950, "wdth" 140; }
+  .burst span { display: inline-block; white-space: pre; animation: shoot 1400ms var(--ease) both; animation-delay: calc(var(--i) * 40ms); }
+  @keyframes shoot {
+    0% { transform: translateY(80vh) rotate(20deg); opacity: 0; }
+    35%, 70% { transform: none; opacity: 1; }
+    100% { transform: translateY(-80vh) rotate(-12deg); opacity: 0; }
+  }
+
+  @media (max-width: 720px) {
+    .nav-links { display: none; }
+    .row { grid-template-columns: 60px 1fr; }
+    .row button { grid-column: 2; justify-self: start; margin-top: 6px; }
+    .bpm input { width: 140px; }
+    .bpm { bottom: 96px; }
+    .hero { padding-bottom: 280px; }
+    .scroll-cue { display: none; }
+    .cta { left: var(--margin); justify-content: center; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .word span, .burst span { animation: none !important; }
+    dialog.sheet[open], dialog.sheet.closing, dialog.sheet::backdrop { animation-duration: .01ms !important; }
+    .ride { height: auto; }
+    .ride-stage { position: static; height: auto; padding: 80px 0; }
+    .ride-line { transform: none !important; white-space: normal; }
+    .row .name, .row::before { transition: none; }
+    .step, .check { animation: none; }
+  }
+</style>
+</head>
+<body>
+<nav aria-label="주 메뉴">
+  <span class="mark">TEMPO/26</span>
+  <div class="nav-links"><a href="#lineup" data-scramble>LINEUP</a><a href="#ride" data-scramble>MANIFESTO</a><a href="#" data-scramble data-open-sheet>TICKETS</a></div>
+</nav>
+
+<main>
+  <header class="hero">
+    <p class="eyebrow">가상의 타이포 음악 페스티벌 · 11.21–22 · 데모</p>
+    <h1 class="word" id="word" aria-label="TEMPO"><span style="--i:0" aria-hidden="true">T</span><span style="--i:1" aria-hidden="true">E</span><span style="--i:2" aria-hidden="true">M</span><span style="--i:3" aria-hidden="true">P</span><span style="--i:4" aria-hidden="true">O</span></h1>
+    <div class="seq" id="seq" aria-hidden="true"></div>
+    <p class="now" id="now" aria-live="off"><b>▶ PLAYING</b> · BAR 1 · KICK·BASS·SNARE·HAT·LEAD</p>
+    <p class="sub">소리가 글자가 되는 이틀. 포인터를 가까이 대면 <b>글자가 숨을 쉬어요.</b></p>
+    <div class="bpm">
+      <label for="bpm" class="eyebrow">BPM — 박자를 바꿔 보세요</label><output id="bpmOut" for="bpm">120</output><input id="bpm" type="range" min="60" max="180" step="2" value="120">
+      <div class="deck"><button type="button" id="playBtn" aria-pressed="true">❚❚ 정지</button><button type="button" id="soundBtn" aria-pressed="false">♪ 소리 켜기</button></div>
+    </div>
+    <span class="scroll-cue" aria-hidden="true">SCROLL ↓</span>
+  </header>
+
+  <section class="ride" id="ride" aria-label="선언문">
+    <div class="ride-stage">
+      <p class="ride-line" data-dir="-1">글자가 박자를 탄다 —</p>
+      <p class="ride-line" data-dir="1">LOUDER THAN WORDS</p>
+      <p class="ride-line" data-dir="-1">읽는 대신 듣는다</p>
+    </div>
+  </section>
+
+  <div class="marquee a" aria-hidden="true"><div class="track" data-speed="1"></div></div>
+  <div class="marquee b" aria-hidden="true"><div class="track" data-speed="-1.4"></div></div>
+
+  <section class="lineup" id="lineup">
+    <p class="eyebrow">LINEUP · 무대를 누르면 그 날의 티켓 시트가 열려요</p>
+    <h2>이틀, 여섯 무대.</h2>
+    <ul class="rows" id="rows"></ul>
+  </section>
+</main>
+
+<footer><span>TEMPO 2026 — 실제로 열리지 않는 가상의 페스티벌이에요.</span><span>KINETIC TYPOGRAPHY · BOTTOM SHEET</span></footer>
+
+<button class="cta" id="cta" data-open-sheet aria-haspopup="dialog">티켓 고르기 <small id="ctaInfo">↑</small></button>
+
+<dialog class="sheet" id="sheet" aria-labelledby="sheetTitle">
+  <form method="dialog" class="sheet-body" id="sheetForm">
+    <div class="grab" id="grab" aria-hidden="true"></div>
+    <ol class="steps" aria-label="결제 단계"><li data-s="1">티켓</li><li data-s="2">결제</li><li data-s="3">완료</li></ol>
+
+    <div class="step" data-step="1">
+      <div><p class="eyebrow">STEP 1 · TICKETS</p><h2 id="sheetTitle" tabindex="-1">언제 올래요?</h2></div>
+      <fieldset class="days">
+        <legend class="eyebrow" style="margin-bottom:8px">날짜</legend>
+        <label class="day"><input type="radio" name="day" value="sat" data-price="89000" checked><span><b>DAY 1 · 토 11.21</b><small>NOISE GARDEN 외 2팀</small></span><span class="p">₩89,000</span></label>
+        <label class="day"><input type="radio" name="day" value="sun" data-price="89000"><span><b>DAY 2 · 일 11.22</b><small>LOW TIDE 외 2팀</small></span><span class="p">₩89,000</span></label>
+        <label class="day"><input type="radio" name="day" value="both" data-price="149000"><span><b>양일권</b><small>이틀 모두, 하루 값보다 싸게</small></span><span class="p">₩149,000</span></label>
+      </fieldset>
+      <div class="qty">
+        <span><b>수량</b><br><small style="color:#555">1인 최대 4매</small></span>
+        <div class="stepper">
+          <button type="button" id="minus" aria-label="수량 줄이기">−</button>
+          <output id="qty" aria-live="polite">1</output>
+          <button type="button" id="plus" aria-label="수량 늘리기">+</button>
+        </div>
+      </div>
+      <div class="sheet-foot">
+        <button type="button" class="btn-ghost" data-close>닫기</button>
+        <button type="button" class="btn-main" data-go="2"><span>결제로</span><span class="total" data-total>₩89,000</span></button>
+      </div>
+    </div>
+
+    <div class="step" data-step="2" hidden>
+      <div><p class="eyebrow">STEP 2 · CHECKOUT</p><h2 tabindex="-1">결제</h2></div>
+      <dl class="summary">
+        <div><dt>티켓</dt><dd id="sumDay">DAY 1 · 토 11.21</dd></div>
+        <div><dt>수량</dt><dd id="sumQty">1매</dd></div>
+        <div><dt>예매 수수료</dt><dd id="sumFee">₩2,000</dd></div>
+        <div class="grand"><dt>총 결제금액</dt><dd data-grand>₩91,000</dd></div>
+      </dl>
+      <fieldset class="methods">
+        <legend class="eyebrow" style="margin-bottom:8px">결제 수단</legend>
+        <label class="method"><input type="radio" name="pay" value="card" checked><span>신용·체크카드</span></label>
+        <label class="method"><input type="radio" name="pay" value="easy"><span>간편결제</span></label>
+        <label class="method"><input type="radio" name="pay" value="bank"><span>계좌이체</span></label>
+        <label class="method"><input type="radio" name="pay" value="phone"><span>휴대폰</span></label>
+      </fieldset>
+      <label class="agree"><input type="checkbox" id="agree"><span>주문 내용을 확인했고 취소·환불 규정에 동의해요.</span></label>
+      <p class="err" id="agreeErr" aria-live="polite"></p>
+      <p class="demo-note">데모 페이지라 실제 결제는 일어나지 않고, 결제 정보도 입력받지 않아요.</p>
+      <div class="sheet-foot">
+        <button type="button" class="btn-ghost" data-go="1">← 이전</button>
+        <button type="button" class="btn-main" id="payBtn"><span id="payLabel">결제하기</span><span class="total" data-grand>₩91,000</span></button>
+      </div>
+    </div>
+
+    <div class="step done" data-step="3" hidden>
+      <div class="check" aria-hidden="true">✓</div>
+      <div><p class="eyebrow">STEP 3 · DONE</p><h2 tabindex="-1">결제 완료!</h2></div>
+      <p>주문번호 <b id="orderNo">TP-000000</b><br><span id="doneInfo"></span></p>
+      <div class="sheet-foot"><button type="button" class="btn-main" data-close="confirm" style="justify-content:center">확인</button></div>
+    </div>
+  </form>
+</dialog>
+
+<div class="burst" id="burst" aria-hidden="true"></div>
+<p class="sr-only" id="announce" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></p>
+
+<script>
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const won = (n) => `₩${n.toLocaleString('ko-KR')}`;
+
+  // ── hero: the five letters are one equalizer — T kick · E bass · M snare · P hat · O lead ──
+  // A 16-step sequencer runs on one clock (AudioContext time when sound is on, performance time otherwise),
+  // so what you see and what you hear come from the same scheduled hits.
+  const letters = $$('#word span');
+  const BANDS = [
+    { name: 'KICK',  decay: 7,  pat: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, .7, 1, 0, 0, 0] },
+    { name: 'BASS',  decay: 4,  pat: [1, 0, 0, .8, 0, 0, .9, 0, 1, 0, 0, .8, 0, .7, 0, .6] },
+    { name: 'SNARE', decay: 8,  pat: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, .35] },
+    { name: 'HAT',   decay: 16, pat: [.4, .15, .9, .15, .4, .15, .9, .15, .4, .15, .9, .15, .4, .3, .9, .3] },
+    { name: 'LEAD',  decay: 5,  pat: [.9, 0, .6, .7, 0, .6, 0, .8, .9, 0, .6, 0, .7, .8, 0, .6] },
+  ];
+  const ROOTS = [57, 53, 48, 55];                 // A · F · C · G (one chord per bar)
+  const ARP = [0, 7, 12, 16, 12, 7, 15, 12];       // chord-tone climb for the lead
+  const BASS_OFF = [0, 0, 0, 0, 0, 0, 12, 0, 0, 0, 0, 7, 0, 12, 0, 10];
+  const energy = BANDS.map(() => 0);
+  const pointerT = letters.map(() => 0);
+  const seq = $('#seq');
+  seq.innerHTML = '<i></i>'.repeat(16);
+  const ticks = [...seq.children];
+
+  let bpmValue = 120, playing = !reduceMotion, audio = null;
+  let nextStepTime = 0, seqStep = 0, seqBar = 0, hits = [], lastFrame = performance.now();
+  const clock = () => (audio ? audio.ctx.currentTime : performance.now() / 1000);
+  const stepDur = () => 60 / bpmValue / 4;
+
+  function scheduleAhead() {
+    const horizon = clock() + 0.12;
+    while (nextStepTime < horizon) {
+      const s = seqStep, b = seqBar, t = nextStepTime;
+      BANDS.forEach((band, i) => {
+        const v = band.pat[s];
+        if (!v) return;
+        hits.push({ t, i, v, s, b });
+        if (audio) playVoice(i, t, v, s, b);
+      });
+      hits.push({ t, i: -1, s, b });               // playhead tick
+      nextStepTime += stepDur();
+      seqStep = (seqStep + 1) % 16;
+      if (seqStep === 0) seqBar = (seqBar + 1) % ROOTS.length;
+    }
+  }
+
+  function render(now, dt) {
+    hits = hits.filter((h) => {
+      if (h.t > now) return true;
+      if (h.i === -1) {
+        ticks.forEach((el, k) => el.classList.toggle('on', k === h.s));
+        if (h.s % 4 === 0) $('#now').innerHTML = `<b>▶ PLAYING</b> · BAR ${h.b + 1} · ${bpmValue} BPM`;
+      } else {
+        energy[h.i] = Math.max(energy[h.i], h.v);
+      }
+      return false;
+    });
+    letters.forEach((el, i) => {
+      energy[i] *= Math.exp(-BANDS[i].decay * dt);
+      const e = energy[i], p = pointerT[i];
+      el.style.setProperty('--w', Math.min(1000, 220 + e * 780 + p * 300).toFixed(0));
+      el.style.setProperty('--x', Math.min(150, 72 + e * 58 + p * 30).toFixed(1));
+      el.style.setProperty('--sy', (0.86 + e * 0.3).toFixed(3));
+      el.style.setProperty('--op', (0.5 + e * 0.5 + p * 0.3).toFixed(3));
+    });
+  }
+
+  (function loop() {
+    const nowMs = performance.now();
+    const dt = Math.min(0.05, (nowMs - lastFrame) / 1000);
+    lastFrame = nowMs;
+    if (playing) scheduleAhead();
+    render(clock(), dt);
+    requestAnimationFrame(loop);
+  })();
+
+  function restartClock() { nextStepTime = clock() + 0.05; hits = []; }
+  restartClock();
+
+  if (!reduceMotion) {
+    addEventListener('pointermove', (e) => {
+      letters.forEach((el, i) => {
+        const r = el.getBoundingClientRect();
+        const d = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+        pointerT[i] = Math.max(0, 1 - d / 420);
+      });
+    });
+  }
+
+  // transport
+  const playBtn = $('#playBtn'), soundBtn = $('#soundBtn');
+  function setPlaying(on) {
+    playing = on;
+    playBtn.setAttribute('aria-pressed', on);
+    playBtn.textContent = on ? '❚❚ 정지' : '▶ 재생';
+    if (on) restartClock();
+    else { ticks.forEach((el) => el.classList.remove('on')); $('#now').innerHTML = `❚❚ PAUSED · ${bpmValue} BPM`; }
+    if (audio) on ? audio.ctx.resume() : audio.ctx.suspend();
+  }
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  if (!playing) setPlaying(false);
+
+  soundBtn.addEventListener('click', async () => {
+    if (!audio) audio = makeAudio();
+    const on = soundBtn.getAttribute('aria-pressed') !== 'true';
+    soundBtn.setAttribute('aria-pressed', on);
+    soundBtn.textContent = on ? '♪ 소리 끄기' : '♪ 소리 켜기';
+    audio.master.gain.setTargetAtTime(on ? 0.55 : 0, audio.ctx.currentTime, 0.03);
+    if (on && !playing) setPlaying(true);
+    await audio.ctx.resume();
+    restartClock();
+  });
+
+  const bpm = $('#bpm');
+  bpm.addEventListener('input', () => {
+    bpmValue = Number(bpm.value);
+    $('#bpmOut').textContent = bpmValue;
+  });
+
+  // ── tiny synth: every voice is generated, no audio files ──
+  function makeAudio() {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ctx.createDynamicsCompressor();
+    const master = ctx.createGain();
+    master.gain.value = 0;
+    master.connect(comp).connect(ctx.destination);
+    const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const data = noise.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    return { ctx, master, noise };
+  }
+  const hz = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+  function env(gainNode, t, peak, decay) {
+    gainNode.gain.setValueAtTime(peak, t);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  }
+  function tone(type, freq, t, peak, decay, filterHz) {
+    const { ctx, master } = audio;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq, t);
+    if (filterHz) {
+      const f = ctx.createBiquadFilter();
+      f.type = 'lowpass';
+      f.frequency.value = filterHz;
+      o.connect(f).connect(g);
+    } else {
+      o.connect(g);
+    }
+    env(g, t, peak, decay);
+    g.connect(master);
+    o.start(t); o.stop(t + decay + 0.02);
+    return o;
+  }
+  function hiss(t, peak, decay, hp) {
+    const { ctx, master, noise } = audio;
+    const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = noise;
+    f.type = 'highpass'; f.frequency.value = hp;
+    src.connect(f).connect(g).connect(master);
+    env(g, t, peak, decay);
+    src.start(t); src.stop(t + decay + 0.02);
+  }
+  function playVoice(i, t, v, s, b) {
+    const root = ROOTS[b];
+    if (i === 0) { const o = tone('sine', 150, t, 1 * v, 0.32); o.frequency.exponentialRampToValueAtTime(42, t + 0.14); }
+    if (i === 1) tone('sawtooth', hz(root - 24 + BASS_OFF[s]), t, 0.32 * v, 0.24, 520);
+    if (i === 2) { hiss(t, 0.45 * v, 0.16, 1400); tone('triangle', 190, t, 0.25 * v, 0.08); }
+    if (i === 3) hiss(t, 0.14 * v, 0.035 + v * 0.03, 7000);
+    if (i === 4) tone('square', hz(root + ARP[s % 8]), t, 0.07 * v, 0.18, 2600);
+  }
+
+  // ── scroll-driven headline + marquee velocity ──
+  const ride = $('#ride');
+  const lines = $$('.ride-line');
+  const tracks = $$('.track');
+  const WORDS = ['TEMPO', '템포', 'RHYTHM', '리듬', 'LOUD', '크게', 'FLOW', '흐름'];
+  tracks.forEach((t) => {
+    const set = WORDS.map((w) => `<span>${w}</span>`).join('');
+    t.innerHTML = set + set; // two copies → seamless wrap at 50%
+  });
+  const offsets = tracks.map(() => 0);
+  let lastY = scrollY, velocity = 0;
+
+  function frame() {
+    const y = scrollY;
+    velocity += ((y - lastY) - velocity) * 0.2;
+    lastY = y;
+
+    const r = ride.getBoundingClientRect();
+    const p = Math.max(0, Math.min(1, -r.top / (r.height - innerHeight)));
+    lines.forEach((el) => {
+      const dir = Number(el.dataset.dir);
+      el.style.setProperty('--tx', `${(p - 0.5) * dir * 60}vw`);
+      el.style.setProperty('--w', (200 + p * 750).toFixed(0));
+      el.style.setProperty('--x', (60 + p * 70).toFixed(1));
+    });
+
+    tracks.forEach((t, i) => {
+      const half = t.scrollWidth / 2;
+      const boost = 1 + Math.min(Math.abs(velocity) * 0.25, 12);
+      const dir = velocity < -0.5 ? -1 : 1;
+      offsets[i] = (offsets[i] - Number(t.dataset.speed) * boost * dir + half) % half;
+      t.style.transform = `translate3d(${-offsets[i]}px, 0, 0)`;
+    });
+    requestAnimationFrame(frame);
+  }
+  if (!reduceMotion) requestAnimationFrame(frame);
+
+  // ── nav word scramble ──
+  const GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#%&/0123456789';
+  $$('[data-scramble]').forEach((a) => {
+    const text = a.textContent;
+    a.setAttribute('aria-label', text);
+    a.addEventListener('pointerenter', () => {
+      if (reduceMotion) return;
+      let frameNo = 0;
+      clearInterval(a._t);
+      a._t = setInterval(() => {
+        a.textContent = [...text].map((c, i) => (i < frameNo / 2 ? c : GLYPHS[Math.floor(Math.random() * GLYPHS.length)])).join('');
+        if (++frameNo > text.length * 2) { clearInterval(a._t); a.textContent = text; }
+      }, 28);
+    });
+  });
+
+  // ── lineup ──
+  const LINEUP = [
+    ['18:00', 'NOISE GARDEN', 'sat'], ['19:30', '새벽세시 합창단', 'sat'], ['21:00', 'PAPER MOON CLUB', 'sat'],
+    ['18:00', 'LOW TIDE', 'sun'], ['19:30', '기름진 베이스', 'sun'], ['21:00', 'ECHO/ECHO', 'sun'],
+  ];
+  $('#rows').innerHTML = LINEUP.map(([t, n, d]) => `
+    <li class="row"><time>${d === 'sat' ? '토' : '일'} ${t}</time><span class="name">${n}</span>
+      <button type="button" data-open-sheet data-day="${d}" aria-haspopup="dialog" aria-label="${n} 무대 티켓 고르기">티켓 →</button></li>`).join('');
+
+  // ── bottom sheet checkout: 1 tickets → 2 payment → 3 done ──
+  const sheet = $('#sheet');
+  const form = $('#sheetForm');
+  const FEE = 2000;
+  const DAY_LABEL = { sat: 'DAY 1 · 토 11.21', sun: 'DAY 2 · 일 11.22', both: '양일권 · 11.21–22' };
+  let qty = 1, step = 1, opener = null, paid = false;
+
+  const order = () => {
+    const day = $('input[name="day"]:checked', form);
+    const sub = Number(day.dataset.price) * qty;
+    return { day: day.value, sub, grand: sub + FEE * qty };
+  };
+  function syncSheet() {
+    const o = order();
+    $('#qty').textContent = qty;
+    $('#minus').disabled = qty <= 1;
+    $('#plus').disabled = qty >= 4;
+    $$('[data-total]', form).forEach((el) => { el.textContent = won(o.sub); });
+    $$('[data-grand]', form).forEach((el) => { el.textContent = won(o.grand); });
+    $('#sumDay').textContent = DAY_LABEL[o.day];
+    $('#sumQty').textContent = `${qty}매`;
+    $('#sumFee').textContent = won(FEE * qty);
+  }
+  function goStep(n) {
+    const back = n < step;
+    step = n;
+    $$('.step', form).forEach((el) => {
+      const on = Number(el.dataset.step) === n;
+      el.hidden = !on;
+      el.classList.toggle('back', on && back);
+    });
+    $$('.steps li', form).forEach((li) => {
+      li.classList.toggle('on', Number(li.dataset.s) <= n);
+      li.toggleAttribute('aria-current', Number(li.dataset.s) === n);
+    });
+    $(`.step[data-step="${n}"] h2`, form).focus();
+  }
+  function openSheet(day) {
+    opener = document.activeElement;
+    if (day) $(`input[name="day"][value="${day}"]`, form).checked = true;
+    if (paid) { paid = false; $('#agree').checked = false; }
+    syncSheet();
+    sheet.classList.remove('closing');
+    sheet.style.transform = '';
+    sheet.showModal();
+    goStep(1);
+  }
+  function closeSheet(value = 'cancel') {
+    if (!sheet.open || sheet.classList.contains('closing')) return;
+    if (reduceMotion) return finishClose(value);
+    sheet.classList.add('closing');
+    sheet.addEventListener('animationend', () => finishClose(value), { once: true });
+  }
+  function finishClose(value) {
+    sheet.classList.remove('closing');
+    sheet.style.transform = '';
+    sheet.close(value);
+    opener?.focus?.();
+    if (value === 'confirm') celebrate();
+  }
+
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-open-sheet]');
+    if (!t) return;
+    e.preventDefault();
+    openSheet(t.dataset.day);
+  });
+  form.addEventListener('change', syncSheet);
+  form.addEventListener('submit', (e) => e.preventDefault());
+  form.addEventListener('click', (e) => {
+    const go = e.target.closest('[data-go]');
+    if (go) return goStep(Number(go.dataset.go));
+    const close = e.target.closest('[data-close]');
+    if (close) closeSheet(close.dataset.close || 'cancel');
+  });
+  $('#minus').addEventListener('click', () => { qty = Math.max(1, qty - 1); syncSheet(); });
+  $('#plus').addEventListener('click', () => { qty = Math.min(4, qty + 1); syncSheet(); });
+
+  // pay: require agreement, fake a short processing state (nothing is sent anywhere)
+  const payBtn = $('#payBtn');
+  payBtn.addEventListener('click', () => {
+    if (!$('#agree').checked) {
+      $('#agreeErr').textContent = '주문 내용 확인에 동의해 주세요.';
+      $('#agree').focus();
+      return;
+    }
+    $('#agreeErr').textContent = '';
+    payBtn.setAttribute('aria-busy', 'true');
+    $('#payLabel').textContent = '결제 중';
+    setTimeout(() => {
+      payBtn.removeAttribute('aria-busy');
+      $('#payLabel').textContent = '결제하기';
+      const o = order();
+      paid = true;
+      $('#orderNo').textContent = `TP-${String(Date.now()).slice(-6)}`;
+      $('#doneInfo').textContent = `${DAY_LABEL[o.day]} · ${qty}매 · ${won(o.grand)}`;
+      goStep(3);
+    }, 1200);
+  });
+  $('#agree').addEventListener('change', () => { if ($('#agree').checked) $('#agreeErr').textContent = ''; });
+
+  // Esc and backdrop: animated close; after payment they count as confirm
+  sheet.addEventListener('cancel', (e) => { e.preventDefault(); closeSheet(paid ? 'confirm' : 'cancel'); });
+  sheet.addEventListener('click', (e) => { if (e.target === sheet) closeSheet(paid ? 'confirm' : 'cancel'); });
+
+  // drag the handle down to dismiss (transform only)
+  const grab = $('#grab');
+  let drag = null;
+  grab.addEventListener('pointerdown', (e) => {
+    grab.setPointerCapture(e.pointerId);
+    drag = { y0: e.clientY, t0: performance.now(), dy: 0 };
+    sheet.style.transition = 'none';
+  });
+  grab.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    drag.dy = Math.max(0, e.clientY - drag.y0);
+    sheet.style.transform = `translateY(${drag.dy}px)`;
+  });
+  grab.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const speed = drag.dy / (performance.now() - drag.t0);
+    const dismiss = drag.dy > sheet.offsetHeight * 0.3 || speed > 0.6;
+    drag = null;
+    sheet.style.transition = 'transform 320ms cubic-bezier(0.23, 1, 0.32, 1)';
+    if (dismiss) {
+      sheet.style.transform = 'translateY(100%)';
+      sheet.addEventListener('transitionend', () => { sheet.style.transition = ''; finishClose(paid ? 'confirm' : 'cancel'); }, { once: true });
+    } else {
+      sheet.style.transform = '';
+    }
+  });
+
+  // after payment: CTA shows the order + kinetic burst
+  function celebrate() {
+    const o = order();
+    const label = { sat: 'DAY 1', sun: 'DAY 2', both: '양일권' }[o.day];
+    $('#ctaInfo').textContent = `${label} · ${qty}매 결제됨 ✓`;
+    $('#announce').textContent = `${label} ${qty}매 결제가 완료됐어요.`;
+    if (reduceMotion) return;
+    const burst = $('#burst');
+    burst.innerHTML = `<p>${[...'SEE YOU!'].map((c, i) => `<span style="--i:${i}">${c}</span>`).join('')}</p>`;
+    setTimeout(() => { burst.innerHTML = ''; }, 2000);
+  }
+</script>
+</body>
+</html>

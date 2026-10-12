@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Strata</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Noto+Sans+KR:wght@400..700&display=swap" rel="stylesheet">
+<style>
+  /* tokens — design-isms: refractive-glass-ui (primary) + glassmorphism + spatial-ui */
+  @property --bg1 { syntax: "<color>"; inherits: true; initial-value: #F4FAFF; }
+  @property --bg2 { syntax: "<color>"; inherits: true; initial-value: #C7E7F2; }
+  @property --o1 { syntax: "<color>"; inherits: true; initial-value: #B89CFF; }
+  @property --o2 { syntax: "<color>"; inherits: true; initial-value: #8FD3E8; }
+  @property --o3 { syntax: "<color>"; inherits: true; initial-value: #FFD6E0; }
+  @property --fg { syntax: "<color>"; inherits: true; initial-value: #172033; }
+  @property --muted { syntax: "<color>"; inherits: true; initial-value: #4A5568; }
+  @property --surface { syntax: "<color>"; inherits: true; initial-value: #FFFFFF; }
+  @property --tint { syntax: "<color>"; inherits: true; initial-value: rgb(255 255 255 / .42); }
+
+  :root {
+    --accent: #7F5AF0;
+    --ease: cubic-bezier(0.2, 0, 0, 1);       /* control feedback */
+    --spring: cubic-bezier(.34, 1.5, .5, 1);  /* liquid indicator */
+    --fast: 180ms;
+    --scene: 900ms;
+    --gutter: 24px;
+    --margin: 32px;
+    --space: 24px;
+    --radius: 28px;
+    --sans: "Instrument Sans", "Noto Sans KR", system-ui, sans-serif;
+    --px: 0; --py: 0; --sy: 0;
+    transition: --bg1 var(--scene), --bg2 var(--scene), --o1 var(--scene), --o2 var(--scene), --o3 var(--scene),
+                --fg var(--scene), --muted var(--scene), --surface var(--scene), --tint var(--scene);
+    color-scheme: light;
+  }
+  :root[data-scene="tide"] {
+    --bg1: #E4F6F1; --bg2: #9ED6E4; --o1: #2CB67D; --o2: #4FACFE; --o3: #C7E7F2;
+    --fg: #0E2A2F; --muted: #3C5A5F; --surface: #F8FFFE; --tint: rgb(240 255 252 / .4);
+    --accent: #138A5C;
+  }
+  :root[data-scene="night"] {
+    --bg1: #16161A; --bg2: #172033; --o1: #7F5AF0; --o2: #2CB67D; --o3: #B89CFF;
+    --fg: #F4FAFF; --muted: #A9B4C8; --surface: #1E2433; --tint: rgb(30 36 51 / .45);
+    --accent: #B89CFF;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh;
+    font: 400 16px/1.5 var(--sans);
+    letter-spacing: -0.02em;
+    color: var(--fg);
+    background: var(--bg1);
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  /* ───── background world: three depth planes, pointer + scroll parallax ───── */
+  .world { position: fixed; inset: 0; z-index: -1; overflow: hidden;
+    background: radial-gradient(120% 90% at 10% 0%, var(--bg2), var(--bg1) 60%); }
+  .layer {
+    position: absolute; inset: -12%;
+    transform: translate3d(calc(var(--px) * var(--d) * 1px), calc(var(--py) * var(--d) * 1px - var(--sy) * var(--k) * 1px), 0);
+    will-change: transform;
+  }
+  .far  { --d: 14; --k: .04; }
+  .mid  { --d: 34; --k: .12; }
+  .near { --d: 70; --k: .3; }
+
+  .orb { position: absolute; border-radius: 50%; animation: drift 22s ease-in-out infinite alternate; }
+  .orb.a { width: 62vmax; aspect-ratio: 1; left: 48%; top: 2%;  background: radial-gradient(circle, var(--o1), transparent 66%); opacity: .75; }
+  .orb.b { width: 54vmax; aspect-ratio: 1; left: -8%; top: 46%; background: radial-gradient(circle, var(--o2), transparent 64%); opacity: .6; animation-duration: 28s; }
+  .orb.c { width: 40vmax; aspect-ratio: 1; left: 30%; top: 70%; background: radial-gradient(circle, var(--o3), transparent 64%); opacity: .7; animation-duration: 34s; }
+  @keyframes drift { to { transform: translate3d(-6vmax, 4vmax, 0) scale(1.08); } }
+
+  .ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid color-mix(in oklab, var(--fg) 18%, transparent);
+    box-shadow: inset 0 0 60px color-mix(in oklab, var(--o1) 30%, transparent);
+    animation: spin 80s linear infinite;
+  }
+  .ring.a { width: 46vmax; aspect-ratio: 1; left: 52%; top: 12%; }
+  .ring.b { width: 30vmax; aspect-ratio: 1; left: 58%; top: 20%; border-style: dashed; animation-direction: reverse; }
+  .ring.c { width: 22vmax; aspect-ratio: 1; left: 6%;  top: 58%; }
+  @keyframes spin { to { rotate: 360deg; } }
+
+  .sphere {
+    position: absolute; border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 28%, rgb(255 255 255 / .95) 0 5%, transparent 26%),
+      radial-gradient(circle at 70% 78%, color-mix(in oklab, var(--c) 60%, #fff) 0, transparent 40%),
+      radial-gradient(circle at 50% 50%, var(--c), color-mix(in oklab, var(--c) 55%, #000));
+    box-shadow: 0 30px 60px -20px color-mix(in oklab, var(--c) 60%, #000);
+  }
+  .sphere.a { --c: var(--o1); width: 120px; aspect-ratio: 1; left: 72%; top: 18%; }
+  .sphere.b { --c: var(--o2); width: 64px;  aspect-ratio: 1; left: 62%; top: 52%; }
+  .sphere.c { --c: var(--o3); width: 180px; aspect-ratio: 1; left: 84%; top: 62%; }
+  .sphere.d { --c: var(--o2); width: 42px;  aspect-ratio: 1; left: 18%; top: 30%; }
+
+  .grain { position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* ───── glass material: opaque by default, translucent only where supported ───── */
+  .glass {
+    background: var(--surface);
+    border: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+    box-shadow: 0 24px 60px -24px rgb(10 14 30 / .45);
+  }
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    :root:not(.opaque) .glass {
+      background: linear-gradient(160deg, rgb(255 255 255 / .22), transparent 55%), var(--tint);
+      border-color: rgb(255 255 255 / .38);
+      -webkit-backdrop-filter: blur(18px) saturate(1.7);
+              backdrop-filter: blur(18px) saturate(1.7);
+      box-shadow:
+        inset 1px 1px 0 rgb(255 255 255 / .65),
+        inset -1px -1px 0 rgb(255 255 255 / .12),
+        inset 0 -10px 24px -14px rgb(255 255 255 / .35),
+        0 24px 60px -24px rgb(10 14 30 / .45);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+    :root .glass, :root .lens { background: var(--surface) !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+    :root .lens-face { opacity: 0; }
+  }
+
+  /* ───── top bar (not glass — stays quiet) ───── */
+  .top { display: flex; justify-content: space-between; align-items: center; padding: 24px var(--margin); }
+  .brand { display: flex; gap: 10px; align-items: center; font-weight: 650; letter-spacing: .02em; }
+  .brand i { width: 22px; aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff 0 12%, var(--o1) 40%, var(--o2)); box-shadow: 0 4px 12px -2px var(--o1); }
+  .top a { color: var(--fg); text-decoration: none; font-weight: 500; }
+  .top a:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+  /* ───── hero + liquid lens ───── */
+  .hero { position: relative; min-height: calc(100svh - 76px); padding: 6vh var(--margin) 160px;
+    display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gutter); align-content: center; }
+  .hero-copy { grid-column: 1 / span 8; position: relative; z-index: 1; }
+  .eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; color: var(--muted); margin-bottom: 20px; }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: currentColor; }
+  h1 { font-size: clamp(48px, 8.4vw, 124px); line-height: .98; font-weight: 650; letter-spacing: -0.045em; }
+  h1 em { font-style: normal; background: linear-gradient(100deg, var(--accent), var(--o2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lede { max-width: 38ch; margin-top: 28px; font-size: 18px; color: var(--muted); }
+  .hint { position: absolute; z-index: 2; font-size: 13px; font-weight: 600; color: var(--muted);
+    transform: translate(-50%, 0); pointer-events: none; transition: opacity 400ms var(--ease); white-space: nowrap; }
+
+  .lens {
+    --size: 200px;
+    position: absolute; left: 0; top: 0; z-index: 3;
+    width: var(--size); height: var(--size); border-radius: 50%;
+    cursor: grab; touch-action: none;
+    background: rgb(255 255 255 / .04);
+    -webkit-backdrop-filter: blur(5px) saturate(1.6) brightness(1.05);
+            backdrop-filter: blur(5px) saturate(1.6) brightness(1.05);
+    box-shadow:
+      inset 2px 3px 1px -1px rgb(255 255 255 / .9),
+      inset -3px -4px 2px -2px rgb(255 255 255 / .35),
+      inset 0 0 18px rgb(255 255 255 / .12),
+      0 30px 60px -18px rgb(10 14 30 / .45),
+      0 2px 6px rgb(10 14 30 / .15);
+    will-change: transform;
+  }
+  :root.refract:not(.opaque) .lens { backdrop-filter: url(#refract) saturate(1.5) brightness(1.02); }
+  :root.opaque .lens { background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .lens:active { cursor: grabbing; }
+  .lens-face { position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background:
+      radial-gradient(46% 26% at 36% 14%, rgb(255 255 255 / .42), transparent 70%),
+      radial-gradient(40% 24% at 70% 88%, rgb(255 255 255 / .22), transparent 70%); }
+  :root.opaque .lens-face { opacity: 0; }
+  .lens-label { position: absolute; inset: auto 0 18%; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .2em; color: var(--muted); opacity: 0; }
+  :root.opaque .lens-label { opacity: 1; }
+
+  /* ───── floating dock: segmented scene switch + opacity toggle ───── */
+  .dock {
+    position: fixed; left: 50%; bottom: 24px; z-index: 50; translate: -50% 0;
+    display: flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px;
+  }
+  .seg { position: relative; display: flex; }
+  .seg button { position: relative; z-index: 1; white-space: nowrap; height: 44px; padding: 0 18px; border-radius: 999px; font-weight: 600; font-size: 15px;
+    transition: opacity var(--fast) var(--ease), transform var(--fast) var(--ease); opacity: .72; }
+  .seg button[aria-checked="true"] { opacity: 1; }
+  .seg button:hover { opacity: 1; }
+  .seg button:active { transform: scale(.96); }
+  .drop { position: absolute; top: 0; left: 0; height: 44px; border-radius: 999px;
+    background: linear-gradient(180deg, rgb(255 255 255 / .7), rgb(255 255 255 / .35));
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .9), inset 0 -2px 6px rgb(255 255 255 / .3), 0 6px 16px -6px rgb(10 14 30 / .35);
+    transition: transform 420ms var(--spring), width 420ms var(--spring); }
+  :root[data-scene="night"] .drop { background: linear-gradient(180deg, rgb(255 255 255 / .26), rgb(255 255 255 / .1)); }
+  :root.opaque .drop { background: color-mix(in oklab, var(--accent) 22%, var(--surface)); box-shadow: none; }
+  .sep { width: 1px; height: 24px; background: color-mix(in oklab, var(--fg) 20%, transparent); }
+  .opq { height: 44px; padding: 0 14px; border-radius: 999px; display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600;
+    transition: transform var(--fast) var(--ease), opacity var(--fast) var(--ease); opacity: .8; }
+  .opq:hover { opacity: 1; }
+  .opq:active { transform: scale(.96); }
+  .opq .sw { width: 30px; height: 18px; border-radius: 99px; background: color-mix(in oklab, var(--fg) 20%, transparent); position: relative; }
+  .opq .sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--fg); transition: transform var(--fast) var(--ease); }
+  .opq[aria-pressed="true"] .sw { background: var(--accent); }
+  .opq[aria-pressed="true"] .sw::after { transform: translateX(12px); background: #fff; }
+
+  /* ───── sections: content lives on stable, opaque surfaces ───── */
+  section { padding: 120px var(--margin); }
+  .head { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--gutter); margin-bottom: 56px; }
+  .head h2 { grid-column: 1 / span 6; font-size: clamp(32px, 4vw, 52px); line-height: 1.05; font-weight: 650; letter-spacing: -0.035em; }
+  .head p { grid-column: 8 / span 5; align-self: end; color: var(--muted); font-size: 17px; text-wrap: pretty; }
+
+  .surface {
+    background: var(--surface); color: var(--fg); border-radius: var(--radius);
+    border: 1px solid color-mix(in oklab, var(--fg) 8%, transparent);
+    box-shadow: 0 1px 0 rgb(255 255 255 / .6) inset, 0 40px 80px -40px rgb(10 14 30 / .4), 0 8px 20px -12px rgb(10 14 30 / .2);
+  }
+
+  /* strata — planes at different depths; hovered plane comes forward */
+  .strata { position: relative; height: 520px; perspective: 1400px; perspective-origin: 30% 20%; }
+  .plane {
+    --z: calc(var(--i) * -160px * var(--spread, .3));
+    position: absolute; width: min(560px, 78%); padding: 32px;
+    left: calc(var(--i) * 13%); top: calc(var(--i) * 92px); z-index: calc(3 - var(--i));
+    transform: translate3d(0, 0, var(--z)) rotateY(-10deg);
+    transition: transform 500ms var(--ease), opacity 400ms var(--ease);
+    cursor: default;
+  }
+  .plane .no { font-size: 13px; font-weight: 700; letter-spacing: .14em; color: var(--accent); }
+  .plane h3 { font-size: 28px; font-weight: 650; letter-spacing: -0.03em; margin: 10px 0 8px; }
+  .plane p { color: var(--muted); max-width: 40ch; text-wrap: pretty; }
+  .plane .depth { position: absolute; right: 28px; top: 28px; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--muted); }
+  .strata:hover .plane, .strata:focus-within .plane { opacity: .5; }
+  .strata .plane:hover, .strata .plane:focus-visible { opacity: 1; transform: translate3d(0, -8px, 80px) rotateY(-4deg); z-index: 5; }
+
+  /* exhibits — tilt + specular following pointer */
+  .rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--gutter); perspective: 1000px; }
+  .room { position: relative; overflow: hidden; transform-style: preserve-3d;
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition: transform 300ms var(--ease); }
+  .room.live { transition: none; }
+  .room::after { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+    background: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), rgb(255 255 255 / .28), transparent 45%);
+    transition: opacity 300ms var(--ease); }
+  .room:hover::after { opacity: 1; }
+  .art { height: 240px; margin: 10px; border-radius: calc(var(--radius) - 10px); position: relative; overflow: hidden; background: var(--a1); }
+  .art span { position: absolute; border-radius: 50%; }
+  .room:nth-child(1) .art { --a1: linear-gradient(135deg, #B89CFF, #7F5AF0 60%, #172033); }
+  .room:nth-child(1) .art span:nth-child(1) { inset: 18% 30% 18% 30%; border: 1px solid rgb(255 255 255 / .6); transform: translateZ(40px); }
+  .room:nth-child(1) .art span:nth-child(2) { inset: 30% 10% 30% 50%; background: radial-gradient(circle at 30% 30%, #fff, #C7E7F2 40%, transparent 72%); }
+  .room:nth-child(2) .art { --a1: linear-gradient(180deg, #C7E7F2, #4FACFE 55%, #2CB67D); }
+  .room:nth-child(2) .art span:nth-child(1) { width: 160%; height: 120%; left: -30%; top: 55%; background: radial-gradient(closest-side, rgb(255 255 255 / .55), transparent); }
+  .room:nth-child(2) .art span:nth-child(2) { width: 160%; height: 120%; left: -50%; top: 70%; background: radial-gradient(closest-side, rgb(23 32 51 / .35), transparent); }
+  .room:nth-child(3) .art { --a1: radial-gradient(circle at 70% 30%, #2CB67D, #172033 60%); }
+  .room:nth-child(3) .art span:nth-child(1) { width: 90px; height: 90px; left: 22%; top: 30%; background: radial-gradient(circle at 30% 28%, #fff 0 6%, #B89CFF 30%, #4b2fb0); box-shadow: 0 20px 40px -10px #000; }
+  .room:nth-child(3) .art span:nth-child(2) { width: 34px; height: 34px; left: 60%; top: 58%; background: radial-gradient(circle at 30% 28%, #fff 0 8%, #2CB67D 40%, #0a4d34); }
+  .room-body { padding: 18px 26px 26px; }
+  .room-body small { color: var(--muted); font-weight: 600; font-size: 13px; }
+  .room-body h3 { font-size: 22px; font-weight: 650; margin: 4px 0 6px; letter-spacing: -0.03em; }
+  .room-body p { color: var(--muted); font-size: 15px; text-wrap: pretty; }
+
+  footer { padding: 40px var(--margin) 120px; color: var(--muted); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+  @media (max-width: 860px) {
+    :root { --margin: 16px; }
+    .hero-copy { grid-column: 1 / -1; }
+    .head h2, .head p { grid-column: 1 / -1; }
+    .rooms { grid-template-columns: 1fr; }
+    .strata { height: auto; perspective: none; display: grid; gap: 16px; }
+    .plane { position: relative; left: 0; top: 0; width: 100%; transform: none; }
+    .strata:hover .plane, .strata:focus-within .plane { opacity: 1; }
+    .strata .plane:hover, .strata .plane:focus-visible { transform: none; }
+    .seg button { padding: 0 13px; }
+    .opq .lbl { display: none; }
+    .lens { --size: 150px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .orb, .ring { animation: none; }
+    .layer { transform: none; }
+    .plane, .room, .drop, .seg button { transition: none; }
+  }
+  @media (forced-colors: active) {
+    .glass, .surface, .lens { border: 1px solid CanvasText; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="refract" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feImage id="lensMap" x="0" y="0" width="200" height="200" preserveAspectRatio="none" result="map"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" data-k="0.46" scale="92" xChannelSelector="R" yChannelSelector="G" result="dr"/>
+    <feColorMatrix in="dr" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="r"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" data-k="0.42" scale="84" xChannelSelector="R" yChannelSelector="G" result="dg"/>
+    <feColorMatrix in="dg" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="g"/>
+    <feDisplacementMap in="SourceGraphic" in2="map" data-k="0.38" scale="76" xChannelSelector="R" yChannelSelector="G" result="db"/>
+    <feColorMatrix in="db" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="b"/>
+    <feBlend in="r" in2="g" mode="screen" result="rg"/>
+    <feBlend in="rg" in2="b" mode="screen"/>
+  </filter>
+</svg>
+
+<div class="world" aria-hidden="true">
+  <div class="layer far"><span class="orb a"></span><span class="orb b"></span><span class="orb c"></span></div>
+  <div class="layer mid"><span class="ring a"></span><span class="ring b"></span><span class="ring c"></span></div>
+  <div class="layer near"><span class="sphere a"></span><span class="sphere b"></span><span class="sphere c"></span><span class="sphere d"></span></div>
+</div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="top">
+  <span class="brand"><i aria-hidden="true"></i>LUMEN STRATA</span>
+  <a href="#rooms">전시 둘러보기</a>
+</header>
+
+<main>
+  <section class="hero" id="hero" style="padding-top:6vh">
+    <div class="hero-copy">
+      <p class="eyebrow">빛의 지층 전시관 · 가상 데모</p>
+      <h1>빛은 겹칠수록<br><em>깊어진다.</em></h1>
+      <p class="lede">투명한 층 사이를 걸어 보세요. 렌즈를 끌어 글자 위에 올리면, 그 아래 세계가 휘어 보입니다.</p>
+    </div>
+    <div class="lens" id="lens" tabindex="0" role="button" aria-label="유리 렌즈. 끌거나 방향키로 움직일 수 있어요"><span class="lens-face"></span><span class="lens-label">LENS</span></div>
+    <p class="hint" id="hint">렌즈를 끌어 보세요 ↓</p>
+  </section>
+
+  <section id="strata">
+    <div class="head">
+      <h2>세 개의 층,<br>세 개의 거리.</h2>
+      <p>스크롤하면 층 사이가 벌어집니다. 한 층에 손을 올리면 그 층만 앞으로 다가와요.</p>
+    </div>
+    <div class="strata" id="strataStage">
+      <article class="plane surface" style="--i:0" tabindex="0"><span class="no">LAYER 01</span><span class="depth">0 m</span><h3>표면 — 빛이 머무는 곳</h3><p>가장 가까운 층. 손이 닿는 모든 조작은 이 높이에서 일어납니다.</p></article>
+      <article class="plane surface" style="--i:1" tabindex="0"><span class="no">LAYER 02</span><span class="depth">−12 m</span><h3>중층 — 빛이 휘는 곳</h3><p>굴절과 반사가 겹치는 지대. 윤곽은 남고 질감은 부드러워집니다.</p></article>
+      <article class="plane surface" style="--i:2" tabindex="0"><span class="no">LAYER 03</span><span class="depth">−40 m</span><h3>심층 — 빛이 잠드는 곳</h3><p>멀리 있는 것은 흐려지지만, 읽히지 않을 만큼 흐려지지는 않습니다.</p></article>
+    </div>
+  </section>
+
+  <section id="rooms">
+    <div class="head">
+      <h2>지금 열린 방</h2>
+      <p>세 개의 방이 서로 다른 빛을 품고 있어요. 카드 위에서 포인터를 움직여 보세요.</p>
+    </div>
+    <div class="rooms">
+      <article class="room surface"><div class="art"><span></span><span></span></div><div class="room-body"><small>ROOM A · 상설</small><h3>프리즘 회랑</h3><p>보랏빛 원이 한 점을 중심으로 천천히 돌아갑니다.</p></div></article>
+      <article class="room surface"><div class="art"><span></span><span></span></div><div class="room-body"><small>ROOM B · 10월 한정</small><h3>느린 파도</h3><p>수면 위아래의 빛이 같은 속도로 숨을 쉽니다.</p></div></article>
+      <article class="room surface"><div class="art"><span></span><span></span></div><div class="room-body"><small>ROOM C · 야간 개장</small><h3>자정의 온실</h3><p>초록 어둠 속에 작은 구슬 두 개가 떠 있습니다.</p></div></article>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>LUMEN STRATA — 가상의 전시관, 데모 페이지</span>
+  <span>유리 효과는 CSS·SVG로 만든 웹 근사치예요. Apple의 네이티브 Liquid Glass와는 달라요.</span>
+</footer>
+
+<nav class="dock glass" aria-label="장면과 재질 설정">
+  <div class="seg" role="radiogroup" aria-label="장면">
+    <span class="drop" id="drop" aria-hidden="true"></span>
+    <button role="radio" data-scene="dawn">새벽</button>
+    <button role="radio" data-scene="tide">수면</button>
+    <button role="radio" data-scene="night">심야</button>
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <button class="opq" id="opq" aria-pressed="false"><span class="sw" aria-hidden="true"></span><span class="lbl">불투명</span></button>
+</nav>
+
+<script>
+  const root = document.documentElement;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Real displacement refraction only where backdrop-filter:url() renders (Chromium); others keep the blur lens.
+  const canRefract = navigator.userAgentData?.brands?.some((b) => b.brand === 'Chromium');
+  if (canRefract) root.classList.add('refract');
+  let mapSize = 0;
+  function syncLensMap(size) {
+    if (!canRefract || size === mapSize) return;
+    mapSize = size;
+    const img = document.getElementById('lensMap');
+    img.setAttribute('width', size);
+    img.setAttribute('height', size);
+    img.setAttribute('href', lensMap(size));
+    document.querySelectorAll('#refract [data-k]').forEach((m) => m.setAttribute('scale', Math.round(size * m.dataset.k)));
+  }
+
+  // R/G channels encode x/y offset: center magnifies slightly, rim bends light inward like a thick lens.
+  function lensMap(size) {
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(size, size);
+    const r = size / 2;
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const nx = (x + 0.5 - r) / r;
+        const ny = (y + 0.5 - r) / r;
+        const d = Math.hypot(nx, ny);
+        const k = d < 1 ? Math.max(-1, Math.min(1, Math.pow(d, 4) * 1.5 - 0.35)) : 0;
+        const i = (y * size + x) * 4;
+        img.data[i] = 128 + nx * k * 127;
+        img.data[i + 1] = 128 + ny * k * 127;
+        img.data[i + 2] = 128;
+        img.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    return c.toDataURL();
+  }
+
+  // ── scenes (segmented radio, roving focus) ──
+  const seg = document.querySelector('.seg');
+  const radios = [...seg.querySelectorAll('[role="radio"]')];
+  const drop = document.getElementById('drop');
+  function setScene(name, focus) {
+    root.dataset.scene = name;
+    radios.forEach((b) => {
+      const on = b.dataset.scene === name;
+      b.setAttribute('aria-checked', on);
+      b.tabIndex = on ? 0 : -1;
+      if (on) {
+        if (focus) b.focus();
+        drop.style.width = `${b.offsetWidth}px`;
+        drop.style.transform = `translateX(${b.offsetLeft}px)`;
+        if (!reduceMotion) drop.animate(
+          [{ scale: '1 1' }, { scale: '1.18 .82' }, { scale: '.94 1.06' }, { scale: '1 1' }],
+          { duration: 520, easing: 'ease-out' });
+      }
+    });
+  }
+  seg.addEventListener('click', (e) => { const b = e.target.closest('[role="radio"]'); if (b) setScene(b.dataset.scene); });
+  seg.addEventListener('keydown', (e) => {
+    const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const i = radios.findIndex((b) => b.dataset.scene === root.dataset.scene);
+    setScene(radios[(i + step + radios.length) % radios.length].dataset.scene, true);
+  });
+  root.style.transition = 'none'; // no fade on first paint
+  setScene(matchMedia('(prefers-color-scheme: dark)').matches ? 'night' : 'dawn');
+  requestAnimationFrame(() => requestAnimationFrame(() => root.style.transition = ''));
+  addEventListener('resize', () => setScene(root.dataset.scene));
+  document.fonts?.ready.then(() => setScene(root.dataset.scene));
+
+  // ── opaque alternative ──
+  const opq = document.getElementById('opq');
+  opq.addEventListener('click', () => {
+    const on = root.classList.toggle('opaque');
+    opq.setAttribute('aria-pressed', on);
+  });
+
+  // ── world parallax: pointer tilt + scroll depth (lerped, compositor-only) ──
+  let tx = 0, ty = 0, cx = 0, cy = 0;
+  if (!reduceMotion) {
+    addEventListener('pointermove', (e) => { tx = e.clientX / innerWidth * 2 - 1; ty = e.clientY / innerHeight * 2 - 1; });
+    (function tick() {
+      cx += (tx - cx) * 0.06; cy += (ty - cy) * 0.06;
+      root.style.setProperty('--px', (-cx).toFixed(4));
+      root.style.setProperty('--py', (-cy).toFixed(4));
+      root.style.setProperty('--sy', scrollY.toFixed(1));
+      requestAnimationFrame(tick);
+    })();
+  }
+
+  // ── liquid lens: spring follow + velocity stretch ──
+  const hero = document.getElementById('hero');
+  const lens = document.getElementById('lens');
+  const hint = document.getElementById('hint');
+  const L = { x: 0, y: 0, tx: 0, ty: 0, vx: 0, vy: 0, running: false };
+  function placeLensInitially() {
+    const h1 = hero.querySelector('h1').getBoundingClientRect();
+    const hr = hero.getBoundingClientRect();
+    const s = lens.offsetWidth;
+    syncLensMap(s);
+    L.x = L.tx = Math.min(h1.left - hr.left + h1.width * 0.42, hr.width - s - 16);
+    L.y = L.ty = h1.top - hr.top + h1.height * 0.5 - s / 2;
+    render(0, 0);
+    hint.style.left = `${L.x + s / 2}px`;
+    hint.style.top = `${L.y - 30}px`;
+  }
+  function clampTarget() {
+    const s = lens.offsetWidth;
+    L.tx = Math.max(-s / 3, Math.min(hero.clientWidth - s * 2 / 3, L.tx));
+    L.ty = Math.max(0, Math.min(hero.clientHeight - s, L.ty));
+  }
+  function render(stretch, angle) {
+    lens.style.transform = `translate3d(${L.x}px, ${L.y}px, 0) rotate(${angle}rad) scale(${1 + stretch}, ${1 - stretch * 0.6}) rotate(${-angle}rad)`;
+  }
+  function step() {
+    if (reduceMotion) { L.x = L.tx; L.y = L.ty; render(0, 0); L.running = false; return; }
+    L.vx = (L.vx + (L.tx - L.x) * 0.16) * 0.72;
+    L.vy = (L.vy + (L.ty - L.y) * 0.16) * 0.72;
+    L.x += L.vx; L.y += L.vy;
+    const speed = Math.hypot(L.vx, L.vy);
+    render(Math.min(speed * 0.012, 0.2), Math.atan2(L.vy, L.vx));
+    if (speed > 0.05 || Math.hypot(L.tx - L.x, L.ty - L.y) > 0.5) requestAnimationFrame(step);
+    else { L.running = false; render(0, 0); }
+  }
+  function kick() { clampTarget(); if (!L.running) { L.running = true; requestAnimationFrame(step); } }
+
+  let grab = null;
+  lens.addEventListener('pointerdown', (e) => {
+    lens.setPointerCapture(e.pointerId);
+    grab = { dx: e.clientX - L.x, dy: e.clientY - L.y };
+    hint.style.opacity = 0;
+  });
+  lens.addEventListener('pointermove', (e) => {
+    if (!grab) return;
+    L.tx = e.clientX - grab.dx; L.ty = e.clientY - grab.dy;
+    kick();
+  });
+  lens.addEventListener('pointerup', () => { grab = null; });
+  lens.addEventListener('keydown', (e) => {
+    const m = { ArrowLeft: [-24, 0], ArrowRight: [24, 0], ArrowUp: [0, -24], ArrowDown: [0, 24] }[e.key];
+    if (!m) return;
+    e.preventDefault();
+    hint.style.opacity = 0;
+    L.tx += m[0]; L.ty += m[1];
+    kick();
+  });
+  addEventListener('load', placeLensInitially);
+  document.fonts?.ready.then(placeLensInitially);
+
+  // ── strata: planes separate as the section scrolls through the viewport ──
+  const stage = document.getElementById('strataStage');
+  function spread() {
+    const r = stage.getBoundingClientRect();
+    const p = Math.max(0, Math.min(1, (innerHeight - r.top) / (innerHeight + r.height * 0.4)));
+    stage.style.setProperty('--spread', (0.15 + p * 1.1).toFixed(3));
+  }
+  if (!reduceMotion) { addEventListener('scroll', () => requestAnimationFrame(spread), { passive: true }); spread(); }
+
+  // ── rooms: tilt + specular highlight follow the pointer ──
+  document.querySelectorAll('.room').forEach((card) => {
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+      card.style.setProperty('--mx', `${x * 100}%`);
+      card.style.setProperty('--my', `${y * 100}%`);
+      if (reduceMotion) return;
+      card.classList.add('live');
+      card.style.setProperty('--ry', `${(x - 0.5) * 10}deg`);
+      card.style.setProperty('--rx', `${(0.5 - y) * 10}deg`);
+    });
+    card.addEventListener('pointerleave', () => {
+      card.classList.remove('live');
+      card.style.setProperty('--rx', '0deg');
+      card.style.setProperty('--ry', '0deg');
+    });
+  });
+</script>
+</body>
+</html>

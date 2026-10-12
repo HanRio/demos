@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Demos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Noto+Sans+KR:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F3F1EC; --fg: #121212; --muted: #5E5B55; --line: #D9D5CC; --card: #FFFFFF;
+    --sans: "Instrument Sans", "Noto Sans KR", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --ease: cubic-bezier(0.2, 0, 0, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111110; --fg: #F2F0EB; --muted: #A19D95; --line: #2B2A27; --card: #1A1918; }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--fg); font: 400 17px/1.55 var(--sans); }
+  :focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+
+  header { padding: 72px 0 48px; display: grid; grid-template-columns: 1fr auto; gap: 24px; align-items: end; border-bottom: 1px solid var(--line); }
+  .kicker { font: 500 13px/1 var(--mono); color: var(--muted); letter-spacing: .04em; }
+  h1 { font-size: clamp(44px, 7vw, 92px); line-height: .95; letter-spacing: -0.045em; font-weight: 650; margin-top: 16px; }
+  h1 span { color: var(--muted); }
+  header p { max-width: 34ch; color: var(--muted); }
+  .count { font: 500 13px/1 var(--mono); color: var(--muted); text-align: right; }
+  .count b { display: block; font: 650 56px/1 var(--sans); color: var(--fg); letter-spacing: -0.04em; margin-bottom: 6px; }
+
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 28px; padding: 48px 0 96px; }
+  .demo { display: grid; gap: 16px; color: inherit; text-decoration: none; }
+  .frame { position: relative; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 14px; background: var(--swatch, #000);
+    border: 1px solid var(--line); transition: transform 400ms var(--ease), box-shadow 400ms var(--ease); }
+  .frame iframe { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; border: 0; transform-origin: 0 0; transform: scale(var(--s, .4)); pointer-events: none; }
+  .frame .open { position: absolute; right: 14px; bottom: 14px; padding: 8px 14px; border-radius: 999px; background: var(--fg); color: var(--bg);
+    font-size: 14px; font-weight: 600; opacity: 0; transform: translateY(6px); transition: opacity 250ms var(--ease), transform 250ms var(--ease); }
+  .demo:hover .frame, .demo:focus-visible .frame { transform: translateY(-4px); box-shadow: 0 24px 48px -24px rgb(0 0 0 / .35); }
+  .demo:hover .open, .demo:focus-visible .open { opacity: 1; transform: none; }
+  .meta { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; align-items: start; }
+  .meta h2 { font-size: 24px; letter-spacing: -0.03em; font-weight: 650; line-height: 1.2; }
+  .meta .no { font: 500 13px/1.8 var(--mono); color: var(--muted); }
+  .meta p { grid-column: 1 / -1; color: var(--muted); font-size: 15px; }
+  .tags { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px; }
+  .tags span { font: 500 12px/1 var(--mono); padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); }
+  .chips { display: flex; margin-left: auto; }
+  .chips i { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--bg); margin-left: -6px; }
+
+  footer { border-top: 1px solid var(--line); padding: 28px 0 48px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--muted); font: 500 13px/1.6 var(--mono); }
+  footer a { color: inherit; }
+
+  @media (max-width: 760px) {
+    header { grid-template-columns: 1fr; }
+    .count { text-align: left; }
+    .grid { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .frame, .frame .open { transition: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <p class="kicker">HANRIO / DESIGN DEMOS</p>
+      <h1>디자인 사조,<br><span>만져 보는 데모.</span></h1>
+    </div>
+    <div>
+      <p class="count"><b id="count">0</b>DEMOS · LIVE</p>
+    </div>
+  </header>
+
+  <main class="grid" id="grid"></main>
+
+  <footer>
+    <span>모든 브랜드와 서비스는 데모를 위한 가상의 것이에요.</span>
+    <span>스타일 데이터: <a href="https://lidge-jun.github.io/design-isms/">design-isms</a></span>
+  </footer>
+</div>
+
+<script>
+  // Add a new demo: drop its folder next to this file and append one entry here.
+  const DEMOS = [
+    { path: 'kinetic-demo/', title: 'TEMPO 2026', ism: 'Kinetic Typography', extra: ['Bottom Sheet', 'Web Audio'],
+      desc: '글자 다섯 개가 이퀄라이저가 되는 가상의 음악 페스티벌. 결제는 바텀시트로.', colors: ['#000000', '#FF4500', '#1E90FF', '#FFFFFF'] },
+    { path: 'glass-demo/', title: 'LUMEN STRATA', ism: 'Liquid Glass', extra: ['Glassmorphism', 'Spatial UI'],
+      desc: '끌 수 있는 굴절 렌즈와 세 겹의 깊이를 가진 가상의 빛 전시관.', colors: ['#F4FAFF', '#C7E7F2', '#B89CFF', '#172033'] },
+    { path: 'neo-brutal-demo/', title: 'SHIPIT.CLUB', ism: 'Neo-Brutalism', extra: ['Form', 'Quiz'],
+      desc: '두꺼운 테두리와 단단한 그림자로 만든 주간 출시 모임 서비스.', colors: ['#FF5733', '#FFC300', '#000000', '#FFFFFF'] },
+    { path: 'pop-art-demo/', title: 'SFX MART!', ism: 'Pop Art', extra: ['Halftone', 'Click FX'],
+      desc: '만화 의성어를 파는 가상의 상점. 아무 데나 클릭하면 소리가 튀어나와요.', colors: ['#FFF04A', '#111111', '#E72E5B', '#1E8CFF'] },
+  ];
+
+  const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  document.getElementById('count').textContent = String(DEMOS.length).padStart(2, '0');
+  document.getElementById('grid').innerHTML = DEMOS.map((d, i) => `
+    <a class="demo" href="${esc(d.path)}">
+      <div class="frame" style="--swatch:${esc(d.colors[0])}">
+        <iframe src="${esc(d.path)}" loading="lazy" tabindex="-1" aria-hidden="true" title="${esc(d.title)} 미리보기"></iframe>
+        <span class="open">열기 →</span>
+      </div>
+      <div class="meta">
+        <h2>${esc(d.title)}</h2><span class="no">${String(i + 1).padStart(2, '0')}</span>
+        <p>${esc(d.desc)}</p>
+        <div class="tags"><span>${esc(d.ism)}</span>${d.extra.map((t) => `<span>${esc(t)}</span>`).join('')}
+          <span class="chips" aria-hidden="true">${d.colors.map((c) => `<i style="background:${esc(c)}"></i>`).join('')}</span></div>
+      </div>
+    </a>`).join('');
+
+  // scale each 1280×800 live preview to its card width
+  const ro = new ResizeObserver((entries) => entries.forEach((en) => {
+    en.target.style.setProperty('--s', (en.contentRect.width / 1280).toFixed(4));
+  }));
+  document.querySelectorAll('.frame').forEach((f) => ro.observe(f));
+</script>
+</body>
+</html>
